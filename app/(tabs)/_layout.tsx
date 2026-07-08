@@ -6,27 +6,18 @@ import { palette } from "../../src/theme";
 export default function TabsLayout() {
   return (
     <NativeTabs
-      backgroundColor="rgba(9,11,13,0.72)"
-      blurEffect="systemMaterialDark"
+      backgroundColor="rgba(9,11,13,0.94)"
+      blurEffect="systemChromeMaterialDark"
       disableTransparentOnScrollEdge
-      iconColor={{
-        default: palette.muted,
-        selected: palette.lime,
-      }}
+      iconColor={palette.muted}
       labelStyle={{
-        default: {
-          color: palette.muted,
-          fontSize: 12,
-          fontWeight: "700",
-        },
-        selected: {
-          color: palette.lime,
-          fontSize: 12,
-          fontWeight: "800",
-        },
+        color: palette.muted,
+        fontSize: 12,
+        fontWeight: "700",
       }}
-      minimizeBehavior="automatic"
+      minimizeBehavior="never"
       shadowColor="rgba(0,0,0,0.45)"
+      tintColor={palette.lime}
     >
       <NativeTabs.Trigger name="index">
         <Icon

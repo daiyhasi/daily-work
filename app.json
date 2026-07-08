@@ -2,6 +2,7 @@
   "expo": {
     "name": "每日训练打卡",
     "slug": "daily-work",
+    "scheme": "dailywork",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -15,9 +16,11 @@
       "bundleIdentifier": "com.daiyhasi.dailywork",
       "supportsTablet": true,
       "infoPlist": {
+        "LSSupportsOpeningDocumentsInPlace": true,
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true
-        }
+        },
+        "UIFileSharingEnabled": true
       }
     },
     "android": {
@@ -35,7 +38,8 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "expo-font"
     ],
     "extra": {
       "router": {},
