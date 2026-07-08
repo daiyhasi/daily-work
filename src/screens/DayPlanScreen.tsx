@@ -2,7 +2,7 @@ import { ArrowLeft, Droplets, Dumbbell, Utensils } from "lucide-react-native";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { CheckRow } from "../components/CheckRow";
-import { dailyHabits, globalRules, typeColors, typeLabels, weekdayLabels } from "../data/trainingPlan";
+import { typeColors, typeLabels, weekdayLabels } from "../data/trainingPlan";
 import { createEmptyCheckIn } from "../storage/checkIns";
 import { palette } from "../theme";
 import { CheckIn, DayPlan, TrainingTask } from "../types/plan";
@@ -12,12 +12,14 @@ type DayPlanScreenProps = {
   date: Date;
   dateKey: string;
   plan: DayPlan;
+  globalRules: string[];
+  dailyHabits: string[];
   checkIn?: CheckIn;
   onBack: () => void;
   onSave: (checkIn: CheckIn) => void;
 };
 
-export function DayPlanScreen({ date, dateKey, plan, checkIn, onBack, onSave }: DayPlanScreenProps) {
+export function DayPlanScreen({ date, dateKey, plan, globalRules, dailyHabits, checkIn, onBack, onSave }: DayPlanScreenProps) {
   const current = checkIn ?? createEmptyCheckIn(dateKey);
   const planColor = typeColors[plan.type];
   const taskState = buildTaskState(plan.trainingTasks, current);

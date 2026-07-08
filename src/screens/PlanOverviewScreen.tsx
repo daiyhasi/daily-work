@@ -4,16 +4,33 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { Button, TextInput } from "react-native-paper";
 
 import { generatePlanFromPrompt } from "../api/planGeneration";
+import {
+  getDailyHabitsFromDocument,
+  getGlobalRulesFromDocument,
+  getWeekModifierFromDocument,
+  getWeekPlansFromDocument,
+} from "../data/planDocument";
 import { defaultPlanPrompt } from "../data/planGenerationDemo";
-import { dailyHabits, getWeekPlans, globalRules, typeColors, typeLabels, weekdayLabels, weekModifiers } from "../data/trainingPlan";
+import { typeColors, typeLabels, weekdayLabels, weekModifiers } from "../data/trainingPlan";
 import { getPlanPrompt, savePlanPrompt } from "../storage/planPrompt";
 import { palette } from "../theme";
+import { GeneratedPlanDocument } from "../types/plan";
 
-export function PlanOverviewScreen() {
+type PlanOverviewScreenProps = {
+  generatedPlan: GeneratedPlanDocument | null;
+  onActivateGeneratedPlan: (plan: GeneratedPlanDocument) => Promise<void>;
+};
+
+export function PlanOverviewScreen({ generatedPlan, onActivateGeneratedPlan }: PlanOverviewScreenProps) {
   const [prompt, setPrompt] = useState(defaultPlanPrompt);
+  const [previewPlan, setPreviewPlan] = useState<GeneratedPlanDocument | null>(null);
   const [saveState, setSaveState] = useState<"idle" | "saved">("idle");
   const [generationState, setGenerationState] = useState<"idle" | "loading" | "mocked" | "generated" | "error">("idle");
   const [generationMessage, setGenerationMessage] = useState("");
+  const visiblePlan = previewPlan ?? generatedPlan;
+  const visibleGlobalRules = getGlobalRulesFromDocument(visiblePlan);
+  const visibleDailyHabits = getDailyHabitsFromDocument(visiblePlan);
+  const isPreviewing = Boolean(previewPlan);
 
   useEffect(() => {
     let mounted = true;
@@ -35,6 +52,18 @@ export function PlanOverviewScreen() {
     setSaveState("saved");
   }
 
+  function handleClearPrompt() {
+    setPrompt("");
+    setSaveState("idle");
+    setGenerationMessage("");
+  }
+
+  function handleResetPrompt() {
+    setPrompt(defaultPlanPrompt);
+    setSaveState("idle");
+    setGenerationMessage("");
+  }
+
   async function handleGeneratePlan() {
     setGenerationState("loading");
     setGenerationMessage("");
@@ -44,12 +73,24 @@ export function PlanOverviewScreen() {
       const result = await generatePlanFromPrompt(savedPrompt);
       setPrompt(savedPrompt);
       setSaveState("saved");
+      setPreviewPlan(result.plan);
       setGenerationState(result.usedMock ? "mocked" : "generated");
-      setGenerationMessage(result.usedMock ? "后台未配置，已使用本地 Demo 计划。" : "已从后台生成训练计划。");
+      setGenerationMessage(result.usedMock ? "已生成本地 Demo 预览，确认替换后生效。" : "已生成线上计划预览，确认替换后生效。");
     } catch (error) {
       setGenerationState("error");
       setGenerationMessage(error instanceof Error ? error.message : "计划生成失败");
     }
+  }
+
+  async function handleActivatePreviewPlan() {
+    if (!previewPlan) {
+      return;
+    }
+
+    await onActivateGeneratedPlan(previewPlan);
+    setPreviewPlan(null);
+    setGenerationState("generated");
+    setGenerationMessage("已替换当前生效计划。");
   }
 
   return (
@@ -57,7 +98,7 @@ export function PlanOverviewScreen() {
       <View style={styles.header}>
         <View>
           <Text style={styles.brand}>PLAN LAB</Text>
-          <Text style={styles.subBrand}>四周训练计划</Text>
+          <Text style={styles.subBrand}>{isPreviewing ? "预览计划待确认" : generatedPlan ? "当前使用线上计划" : "当前使用 Demo 计划"}</Text>
         </View>
         <View style={styles.settingsSlot}>
           <Settings color={palette.ink} size={21} />
@@ -95,6 +136,15 @@ export function PlanOverviewScreen() {
           textAlignVertical="top"
         />
 
+        <View style={styles.utilityRow}>
+          <Button mode="outlined" onPress={handleClearPrompt} style={styles.utilityButton} labelStyle={styles.utilityButtonText}>
+            清空
+          </Button>
+          <Button mode="outlined" onPress={handleResetPrompt} style={styles.utilityButton} labelStyle={styles.utilityButtonText}>
+            重置
+          </Button>
+        </View>
+
         <View style={styles.actionRow}>
           <Button mode="outlined" onPress={handleSavePrompt} style={styles.secondaryButton} labelStyle={styles.secondaryButtonText}>
             保存
@@ -115,12 +165,33 @@ export function PlanOverviewScreen() {
         {generationMessage ? (
           <Text style={[styles.generationMessage, generationState === "error" && styles.errorMessage]}>{generationMessage}</Text>
         ) : null}
+        {previewPlan ? (
+          <View style={styles.previewPanel}>
+            <Text style={styles.previewTitle}>新计划预览中</Text>
+            <Text style={styles.previewText}>下方四周内容来自刚生成的新计划。替换前，日历和每日详情仍使用当前生效计划。</Text>
+            <View style={styles.previewActions}>
+              <Button mode="outlined" onPress={() => setPreviewPlan(null)} style={styles.discardButton} labelStyle={styles.secondaryButtonText}>
+                放弃预览
+              </Button>
+              <Button
+                mode="contained"
+                onPress={handleActivatePreviewPlan}
+                buttonColor={palette.lime}
+                textColor={palette.black}
+                style={styles.activateButton}
+                labelStyle={styles.generateButtonText}
+              >
+                替换当前计划
+              </Button>
+            </View>
+          </View>
+        ) : null}
       </View>
 
       <View style={styles.ruleDeck}>
         <Text style={styles.deckTitle}>每日标准</Text>
         <View style={styles.ruleGrid}>
-          {globalRules.map((rule) => (
+          {visibleGlobalRules.map((rule) => (
             <View key={rule} style={styles.ruleTile}>
               <Text style={styles.ruleText}>{rule}</Text>
             </View>
@@ -133,13 +204,13 @@ export function PlanOverviewScreen() {
           <View style={styles.weekHeading}>
             <View>
               <Text style={styles.weekTitle}>WEEK {week}</Text>
-              <Text style={styles.weekModifier}>{weekModifiers[week] ?? "基础适应周"}</Text>
+              <Text style={styles.weekModifier}>{getWeekModifierFromDocument(visiblePlan, week, weekModifiers[week] ?? "基础适应周")}</Text>
             </View>
             <Text style={styles.weekCount}>7 DAYS</Text>
           </View>
 
           <View style={styles.dayList}>
-            {getWeekPlans(week).map((plan) => (
+            {getWeekPlansFromDocument(visiblePlan, week).map((plan) => (
               <View key={`${week}-${plan.weekday}`} style={styles.dayCard}>
                 <View style={styles.dayLeft}>
                   <Text style={[styles.dayWeekday, { color: typeColors[plan.type] }]}>{weekdayLabels[plan.weekday - 1]}</Text>
@@ -161,7 +232,7 @@ export function PlanOverviewScreen() {
 
       <View style={styles.ruleDeck}>
         <Text style={styles.deckTitle}>日常小习惯</Text>
-        {dailyHabits.map((habit) => (
+        {visibleDailyHabits.map((habit) => (
           <Text key={habit} style={styles.habitText}>
             {habit}
           </Text>
@@ -266,6 +337,23 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     borderColor: palette.line,
   },
+  utilityRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 12,
+  },
+  utilityButton: {
+    flex: 1,
+    borderRadius: 18,
+    borderColor: palette.line,
+    backgroundColor: palette.surfaceRaised,
+  },
+  utilityButtonText: {
+    color: palette.muted,
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: "900",
+  },
   actionRow: {
     flexDirection: "row",
     gap: 10,
@@ -300,6 +388,41 @@ const styles = StyleSheet.create({
   },
   errorMessage: {
     color: palette.danger,
+  },
+  previewPanel: {
+    borderRadius: 22,
+    backgroundColor: palette.charcoal,
+    borderWidth: 1,
+    borderColor: "rgba(199,246,77,0.28)",
+    padding: 13,
+    marginTop: 12,
+  },
+  previewTitle: {
+    color: palette.lime,
+    fontSize: 17,
+    lineHeight: 22,
+    fontWeight: "900",
+  },
+  previewText: {
+    color: palette.muted,
+    fontSize: 13,
+    lineHeight: 20,
+    fontWeight: "700",
+    marginTop: 5,
+  },
+  previewActions: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 12,
+  },
+  discardButton: {
+    width: 112,
+    borderRadius: 18,
+    borderColor: palette.line,
+  },
+  activateButton: {
+    flex: 1,
+    borderRadius: 18,
   },
   ruleDeck: {
     borderRadius: 28,

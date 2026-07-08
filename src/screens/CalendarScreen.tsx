@@ -1,23 +1,25 @@
 import { ChevronLeft, ChevronRight, Flame, MoveUpRight } from "lucide-react-native";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
-import { getPlanForWeekday, typeColors, typeLabels, weekdayLabels } from "../data/trainingPlan";
+import { getPlanForWeekdayFromDocument } from "../data/planDocument";
+import { typeColors, typeLabels, weekdayLabels } from "../data/trainingPlan";
 import { getCompletionStatus } from "../storage/checkIns";
 import { palette } from "../theme";
-import { CheckIn, CheckInMap, TrainingTask } from "../types/plan";
+import { CheckIn, CheckInMap, GeneratedPlanDocument, TrainingTask } from "../types/plan";
 import { addDays, addMonths, buildMonthGrid, formatChineseDate, formatChineseMonth, getCyclePosition, startOfWeekMonday, toDateKey } from "../utils/date";
 
 type CalendarScreenProps = {
   month: Date;
   cycleStart: Date;
   checkIns: CheckInMap;
+  generatedPlan: GeneratedPlanDocument | null;
   onMonthChange: (month: Date) => void;
   onSelectDate: (date: Date) => void;
 };
 
 const weekdays = ["一", "二", "三", "四", "五", "六", "日"];
 
-export function CalendarScreen({ month, cycleStart, checkIns, onMonthChange, onSelectDate }: CalendarScreenProps) {
+export function CalendarScreen({ month, cycleStart, checkIns, generatedPlan, onMonthChange, onSelectDate }: CalendarScreenProps) {
   const days = buildMonthGrid(month);
   const monthDays = days.filter((day) => day.inCurrentMonth);
   const completeCount = monthDays.filter((day) => getCompletionStatus(checkIns[day.dateKey]) === "complete").length;
@@ -25,7 +27,7 @@ export function CalendarScreen({ month, cycleStart, checkIns, onMonthChange, onS
   const today = new Date();
   const todayKey = toDateKey(today);
   const todayPosition = getCyclePosition(today, cycleStart);
-  const todayPlan = getPlanForWeekday(todayPosition.week, todayPosition.weekday);
+  const todayPlan = getPlanForWeekdayFromDocument(generatedPlan, todayPosition.week, todayPosition.weekday);
   const todayCheckIn = checkIns[todayKey];
   const todayTrainingProgress = getTrainingProgress(todayPlan.trainingTasks, todayCheckIn);
   const todayOverall = Math.round((todayTrainingProgress + (todayCheckIn?.dietDone ? 100 : 0) + (todayCheckIn?.waterDone ? 100 : 0)) / 3);
@@ -89,7 +91,7 @@ export function CalendarScreen({ month, cycleStart, checkIns, onMonthChange, onS
         {currentWeekDays.map((date) => {
           const key = toDateKey(date);
           const position = getCyclePosition(date, cycleStart);
-          const plan = getPlanForWeekday(position.week, position.weekday);
+          const plan = getPlanForWeekdayFromDocument(generatedPlan, position.week, position.weekday);
           const status = getCompletionStatus(checkIns[key]);
           const color = typeColors[plan.type];
 
@@ -133,7 +135,7 @@ export function CalendarScreen({ month, cycleStart, checkIns, onMonthChange, onS
             const checkIn = checkIns[day.dateKey];
             const status = getCompletionStatus(checkIn);
             const position = getCyclePosition(day.date, cycleStart);
-            const plan = getPlanForWeekday(position.week, position.weekday);
+            const plan = getPlanForWeekdayFromDocument(generatedPlan, position.week, position.weekday);
             const planColor = typeColors[plan.type];
 
             return (

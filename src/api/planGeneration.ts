@@ -23,7 +23,7 @@ export async function generatePlanFromPrompt(userPrompt: string): Promise<PlanGe
   });
 
   if (!response.ok) {
-    throw new Error(`计划生成失败：${response.status}`);
+    throw new Error(await getPlanGenerationErrorMessage(response));
   }
 
   const plan = (await response.json()) as GeneratedPlanDocument;
@@ -33,6 +33,15 @@ export async function generatePlanFromPrompt(userPrompt: string): Promise<PlanGe
     plan,
     usedMock: false,
   };
+}
+
+async function getPlanGenerationErrorMessage(response: Response) {
+  try {
+    const error = (await response.json()) as { message?: string };
+    return error.message ? `计划生成失败：${error.message}` : `计划生成失败：${response.status}`;
+  } catch {
+    return `计划生成失败：${response.status}`;
+  }
 }
 
 function assertGeneratedPlan(plan: GeneratedPlanDocument) {

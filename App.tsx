@@ -5,13 +5,14 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-nati
 import { PaperProvider } from "react-native-paper";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
-import { getPlanForWeekday } from "./src/data/trainingPlan";
+import { getDailyHabitsFromDocument, getGlobalRulesFromDocument, getPlanForWeekdayFromDocument } from "./src/data/planDocument";
 import { CalendarScreen } from "./src/screens/CalendarScreen";
 import { DayPlanScreen } from "./src/screens/DayPlanScreen";
 import { PlanOverviewScreen } from "./src/screens/PlanOverviewScreen";
 import { getAllCheckIns, getOrCreateCycleStart, saveCheckIn } from "./src/storage/checkIns";
+import { getGeneratedPlan, saveGeneratedPlan } from "./src/storage/generatedPlan";
 import { palette, paperTheme } from "./src/theme";
-import { AppTab, CheckIn, CheckInMap } from "./src/types/plan";
+import { AppTab, CheckIn, CheckInMap, GeneratedPlanDocument } from "./src/types/plan";
 import { fromDateKey, getCyclePosition, toDateKey } from "./src/utils/date";
 
 export default function App() {
@@ -20,19 +21,21 @@ export default function App() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [cycleStartKey, setCycleStartKey] = useState<string | null>(null);
   const [checkIns, setCheckIns] = useState<CheckInMap>({});
+  const [generatedPlan, setGeneratedPlan] = useState<GeneratedPlanDocument | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
 
     async function loadAppData() {
-      const [storedCycleStart, storedCheckIns] = await Promise.all([getOrCreateCycleStart(), getAllCheckIns()]);
+      const [storedCycleStart, storedCheckIns, storedPlan] = await Promise.all([getOrCreateCycleStart(), getAllCheckIns(), getGeneratedPlan()]);
       if (!mounted) {
         return;
       }
 
       setCycleStartKey(storedCycleStart);
       setCheckIns(storedCheckIns);
+      setGeneratedPlan(storedPlan);
       setLoading(false);
     }
 
@@ -55,6 +58,11 @@ export default function App() {
     setCheckIns(stored);
   }
 
+  async function handleActivateGeneratedPlan(plan: GeneratedPlanDocument) {
+    await saveGeneratedPlan(plan);
+    setGeneratedPlan(plan);
+  }
+
   let content: React.ReactNode;
 
   if (loading || !cycleStart) {
@@ -70,7 +78,7 @@ export default function App() {
   } else if (selectedDate) {
     const dateKey = toDateKey(selectedDate);
     const position = getCyclePosition(selectedDate, cycleStart);
-    const plan = getPlanForWeekday(position.week, position.weekday);
+    const plan = getPlanForWeekdayFromDocument(generatedPlan, position.week, position.weekday);
 
     content = (
       <>
@@ -79,6 +87,8 @@ export default function App() {
           date={selectedDate}
           dateKey={dateKey}
           plan={plan}
+          globalRules={getGlobalRulesFromDocument(generatedPlan)}
+          dailyHabits={getDailyHabitsFromDocument(generatedPlan)}
           checkIn={checkIns[dateKey]}
           onBack={() => setSelectedDate(null)}
           onSave={handleSaveCheckIn}
@@ -95,11 +105,12 @@ export default function App() {
               month={visibleMonth}
               cycleStart={cycleStart}
               checkIns={checkIns}
+              generatedPlan={generatedPlan}
               onMonthChange={setVisibleMonth}
               onSelectDate={setSelectedDate}
             />
           ) : (
-            <PlanOverviewScreen />
+            <PlanOverviewScreen generatedPlan={generatedPlan} onActivateGeneratedPlan={handleActivateGeneratedPlan} />
           )}
         </View>
         <View style={styles.tabBar}>
