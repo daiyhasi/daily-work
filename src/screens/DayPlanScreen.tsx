@@ -1,5 +1,6 @@
 import { ArrowLeft, Droplets, Dumbbell, Utensils } from "lucide-react-native";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { CheckRow } from "../components/CheckRow";
 import { typeColors, typeLabels, weekdayLabels } from "../data/trainingPlan";
@@ -20,6 +21,7 @@ type DayPlanScreenProps = {
 };
 
 export function DayPlanScreen({ date, dateKey, plan, globalRules, dailyHabits, checkIn, onBack, onSave }: DayPlanScreenProps) {
+  const insets = useSafeAreaInsets();
   const current = checkIn ?? createEmptyCheckIn(dateKey);
   const planColor = typeColors[plan.type];
   const taskState = buildTaskState(plan.trainingTasks, current);
@@ -61,7 +63,7 @@ export function DayPlanScreen({ date, dateKey, plan, globalRules, dailyHabits, c
 
   return (
     <View style={styles.screen}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: Math.max(insets.top + 8, 24) }]}>
         <Pressable accessibilityLabel="返回日历" onPress={onBack} style={styles.backButton}>
           <ArrowLeft color={palette.ink} size={22} />
         </Pressable>

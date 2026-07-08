@@ -1,6 +1,9 @@
 import { ChevronLeft, ChevronRight, Flame, MoveUpRight } from "lucide-react-native";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useRef } from "react";
+import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { FloatingHeader } from "../components/FloatingHeader";
 import { getPlanForWeekdayFromDocument } from "../data/planDocument";
 import { typeColors, typeLabels, weekdayLabels } from "../data/trainingPlan";
 import { getCompletionStatus } from "../storage/checkIns";
@@ -20,6 +23,8 @@ type CalendarScreenProps = {
 const weekdays = ["一", "二", "三", "四", "五", "六", "日"];
 
 export function CalendarScreen({ month, cycleStart, checkIns, generatedPlan, onMonthChange, onSelectDate }: CalendarScreenProps) {
+  const insets = useSafeAreaInsets();
+  const scrollY = useRef(new Animated.Value(0)).current;
   const days = buildMonthGrid(month);
   const monthDays = days.filter((day) => day.inCurrentMonth);
   const completeCount = monthDays.filter((day) => getCompletionStatus(checkIns[day.dateKey]) === "complete").length;
@@ -35,23 +40,31 @@ export function CalendarScreen({ month, cycleStart, checkIns, generatedPlan, onM
   const currentWeekDays = Array.from({ length: 7 }, (_, index) => addDays(weekStart, index));
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-      <View style={styles.topBar}>
-        <View>
-          <Text style={styles.brand}>DAILY WORK</Text>
-          <Text style={styles.subBrand}>{formatChineseMonth(month)}</Text>
+    <View style={styles.screen}>
+      <FloatingHeader title="DAILY WORK" subtitle={formatChineseMonth(month)} scrollY={scrollY} />
+      <Animated.ScrollView
+        style={styles.screen}
+        contentContainerStyle={[styles.content, { paddingTop: Math.max(insets.top + 10, 28) }]}
+        scrollEventThrottle={16}
+        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.topBar}>
+          <View>
+            <Text style={styles.brand}>DAILY WORK</Text>
+            <Text style={styles.subBrand}>{formatChineseMonth(month)}</Text>
+          </View>
+          <View style={styles.monthControls}>
+            <Pressable accessibilityLabel="上个月" onPress={() => onMonthChange(addMonths(month, -1))} style={styles.iconButton}>
+              <ChevronLeft color={palette.ink} size={21} />
+            </Pressable>
+            <Pressable accessibilityLabel="下个月" onPress={() => onMonthChange(addMonths(month, 1))} style={styles.iconButton}>
+              <ChevronRight color={palette.ink} size={21} />
+            </Pressable>
+          </View>
         </View>
-        <View style={styles.monthControls}>
-          <Pressable accessibilityLabel="上个月" onPress={() => onMonthChange(addMonths(month, -1))} style={styles.iconButton}>
-            <ChevronLeft color={palette.ink} size={21} />
-          </Pressable>
-          <Pressable accessibilityLabel="下个月" onPress={() => onMonthChange(addMonths(month, 1))} style={styles.iconButton}>
-            <ChevronRight color={palette.ink} size={21} />
-          </Pressable>
-        </View>
-      </View>
 
-      <Pressable onPress={() => onSelectDate(today)} style={({ pressed }) => [styles.todayPanel, pressed && styles.pressedPanel]}>
+        <Pressable onPress={() => onSelectDate(today)} style={({ pressed }) => [styles.todayPanel, pressed && styles.pressedPanel]}>
         <View style={styles.todayMetaRow}>
           <View style={styles.fireBadge}>
             <Flame color={palette.black} size={18} fill={palette.black} />
@@ -171,8 +184,9 @@ export function CalendarScreen({ month, cycleStart, checkIns, generatedPlan, onM
             );
           })}
         </View>
-      </View>
-    </ScrollView>
+        </View>
+      </Animated.ScrollView>
+    </View>
   );
 }
 

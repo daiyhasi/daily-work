@@ -1,9 +1,11 @@
 import { Cpu, Settings, Sparkles } from "lucide-react-native";
-import { useEffect, useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { Animated, StyleSheet, Text, View } from "react-native";
 import { Button, TextInput } from "react-native-paper";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { generatePlanFromPrompt } from "../api/planGeneration";
+import { FloatingHeader } from "../components/FloatingHeader";
 import {
   getDailyHabitsFromDocument,
   getGlobalRulesFromDocument,
@@ -22,6 +24,8 @@ type PlanOverviewScreenProps = {
 };
 
 export function PlanOverviewScreen({ generatedPlan, onActivateGeneratedPlan }: PlanOverviewScreenProps) {
+  const insets = useSafeAreaInsets();
+  const scrollY = useRef(new Animated.Value(0)).current;
   const [prompt, setPrompt] = useState(defaultPlanPrompt);
   const [previewPlan, setPreviewPlan] = useState<GeneratedPlanDocument | null>(null);
   const [saveState, setSaveState] = useState<"idle" | "saved">("idle");
@@ -94,18 +98,35 @@ export function PlanOverviewScreen({ generatedPlan, onActivateGeneratedPlan }: P
   }
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.brand}>PLAN LAB</Text>
-          <Text style={styles.subBrand}>{isPreviewing ? "预览计划待确认" : generatedPlan ? "当前使用线上计划" : "当前使用 Demo 计划"}</Text>
+    <View style={styles.screen}>
+      <FloatingHeader
+        title="PLAN LAB"
+        subtitle={isPreviewing ? "预览计划待确认" : generatedPlan ? "线上计划" : "Demo 计划"}
+        scrollY={scrollY}
+        rightSlot={
+          <View style={styles.compactSettingsSlot}>
+            <Settings color={palette.ink} size={18} />
+          </View>
+        }
+      />
+      <Animated.ScrollView
+        style={styles.screen}
+        contentContainerStyle={[styles.content, { paddingTop: Math.max(insets.top + 10, 28) }]}
+        scrollEventThrottle={16}
+        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.brand}>PLAN LAB</Text>
+            <Text style={styles.subBrand}>{isPreviewing ? "预览计划待确认" : generatedPlan ? "当前使用线上计划" : "当前使用 Demo 计划"}</Text>
+          </View>
+          <View style={styles.settingsSlot}>
+            <Settings color={palette.ink} size={21} />
+          </View>
         </View>
-        <View style={styles.settingsSlot}>
-          <Settings color={palette.ink} size={21} />
-        </View>
-      </View>
 
-      <View style={styles.console}>
+        <View style={styles.console}>
         <View style={styles.consoleTop}>
           <View style={styles.consoleIcon}>
             <Cpu color={palette.black} size={22} />
@@ -188,7 +209,7 @@ export function PlanOverviewScreen({ generatedPlan, onActivateGeneratedPlan }: P
         ) : null}
       </View>
 
-      <View style={styles.ruleDeck}>
+        <View style={styles.ruleDeck}>
         <Text style={styles.deckTitle}>每日标准</Text>
         <View style={styles.ruleGrid}>
           {visibleGlobalRules.map((rule) => (
@@ -199,7 +220,7 @@ export function PlanOverviewScreen({ generatedPlan, onActivateGeneratedPlan }: P
         </View>
       </View>
 
-      {[1, 2, 3, 4].map((week) => (
+        {[1, 2, 3, 4].map((week) => (
         <View key={week} style={styles.weekSection}>
           <View style={styles.weekHeading}>
             <View>
@@ -230,15 +251,16 @@ export function PlanOverviewScreen({ generatedPlan, onActivateGeneratedPlan }: P
         </View>
       ))}
 
-      <View style={styles.ruleDeck}>
-        <Text style={styles.deckTitle}>日常小习惯</Text>
-        {visibleDailyHabits.map((habit) => (
-          <Text key={habit} style={styles.habitText}>
-            {habit}
-          </Text>
-        ))}
-      </View>
-    </ScrollView>
+        <View style={styles.ruleDeck}>
+          <Text style={styles.deckTitle}>日常小习惯</Text>
+          {visibleDailyHabits.map((habit) => (
+            <Text key={habit} style={styles.habitText}>
+              {habit}
+            </Text>
+          ))}
+        </View>
+      </Animated.ScrollView>
+    </View>
   );
 }
 
@@ -281,6 +303,16 @@ const styles = StyleSheet.create({
     backgroundColor: palette.surfaceRaised,
     borderWidth: 1,
     borderColor: palette.line,
+  },
+  compactSettingsSlot: {
+    width: 34,
+    height: 34,
+    borderRadius: 15,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(24,32,37,0.68)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
   },
   console: {
     borderRadius: 32,
