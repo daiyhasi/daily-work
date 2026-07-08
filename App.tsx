@@ -2,6 +2,7 @@ import { StatusBar } from "expo-status-bar";
 import { CalendarDays, ClipboardList } from "lucide-react-native";
 import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
+import { PaperProvider } from "react-native-paper";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 import { getPlanForWeekday } from "./src/data/trainingPlan";
@@ -9,6 +10,7 @@ import { CalendarScreen } from "./src/screens/CalendarScreen";
 import { DayPlanScreen } from "./src/screens/DayPlanScreen";
 import { PlanOverviewScreen } from "./src/screens/PlanOverviewScreen";
 import { getAllCheckIns, getOrCreateCycleStart, saveCheckIn } from "./src/storage/checkIns";
+import { palette, paperTheme } from "./src/theme";
 import { AppTab, CheckIn, CheckInMap } from "./src/types/plan";
 import { fromDateKey, getCyclePosition, toDateKey } from "./src/utils/date";
 
@@ -60,7 +62,7 @@ export default function App() {
       <>
         <StatusBar style="dark" />
         <View style={styles.loadingScreen}>
-          <ActivityIndicator color="#2F7A67" />
+          <ActivityIndicator color={palette.moss} />
           <Text style={styles.loadingText}>正在准备训练计划</Text>
         </View>
       </>
@@ -104,13 +106,13 @@ export default function App() {
           <TabButton
             label="日历"
             active={activeTab === "calendar"}
-            icon={<CalendarDays color={activeTab === "calendar" ? "#FFFFFF" : "#676B64"} size={20} />}
+            icon={<CalendarDays color={activeTab === "calendar" ? palette.ink : "#D8DDD1"} size={20} />}
             onPress={() => setActiveTab("calendar")}
           />
           <TabButton
             label="计划"
             active={activeTab === "plan"}
-            icon={<ClipboardList color={activeTab === "plan" ? "#FFFFFF" : "#676B64"} size={20} />}
+            icon={<ClipboardList color={activeTab === "plan" ? palette.ink : "#D8DDD1"} size={20} />}
             onPress={() => setActiveTab("plan")}
           />
         </View>
@@ -119,9 +121,11 @@ export default function App() {
   }
 
   return (
-    <SafeAreaProvider>
-      <SafeAreaView style={styles.app}>{content}</SafeAreaView>
-    </SafeAreaProvider>
+    <PaperProvider theme={paperTheme}>
+      <SafeAreaProvider>
+        <SafeAreaView style={styles.app}>{content}</SafeAreaView>
+      </SafeAreaProvider>
+    </PaperProvider>
   );
 }
 
@@ -142,7 +146,7 @@ function TabButton({ label, active, icon, onPress }: { label: string; active: bo
 const styles = StyleSheet.create({
   app: {
     flex: 1,
-    backgroundColor: "#F7F5EF",
+    backgroundColor: palette.canvas,
   },
   main: {
     flex: 1,
@@ -154,7 +158,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   loadingText: {
-    color: "#68665F",
+    color: palette.muted,
     fontSize: 15,
     lineHeight: 22,
     fontWeight: "700",
@@ -164,15 +168,15 @@ const styles = StyleSheet.create({
     left: 20,
     right: 20,
     bottom: 24,
-    height: 62,
+    height: 64,
     flexDirection: "row",
     gap: 10,
-    borderRadius: 8,
-    backgroundColor: "#FFFFFF",
+    borderRadius: 18,
+    backgroundColor: palette.charcoal,
     borderWidth: 1,
-    borderColor: "#E3DFD7",
+    borderColor: "rgba(255,255,255,0.12)",
     padding: 7,
-    shadowColor: "#1F241E",
+    shadowColor: palette.charcoal,
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.12,
     shadowRadius: 22,
@@ -181,25 +185,25 @@ const styles = StyleSheet.create({
   tabButton: {
     flex: 1,
     minWidth: 0,
-    borderRadius: 7,
+    borderRadius: 13,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
   },
   tabButtonActive: {
-    backgroundColor: "#2F7A67",
+    backgroundColor: palette.lime,
   },
   tabPressed: {
     opacity: 0.78,
   },
   tabLabel: {
-    color: "#676B64",
+    color: "#D8DDD1",
     fontSize: 15,
     lineHeight: 20,
     fontWeight: "800",
   },
   tabLabelActive: {
-    color: "#FFFFFF",
+    color: palette.ink,
   },
 });

@@ -1,10 +1,12 @@
 import { ArrowLeft, Droplets, Dumbbell, Utensils } from "lucide-react-native";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ProgressBar } from "react-native-paper";
 
 import { CheckRow } from "../components/CheckRow";
 import { dailyHabits, globalRules, typeColors, typeLabels, weekdayLabels } from "../data/trainingPlan";
 import { createEmptyCheckIn } from "../storage/checkIns";
 import { CheckIn, DayPlan, TrainingTask } from "../types/plan";
+import { palette } from "../theme";
 import { formatChineseDate } from "../utils/date";
 
 type DayPlanScreenProps = {
@@ -59,7 +61,7 @@ export function DayPlanScreen({ date, dateKey, plan, checkIn, onBack, onSave }: 
     <View style={styles.screen}>
       <View style={styles.header}>
         <Pressable accessibilityLabel="返回日历" onPress={onBack} style={styles.backButton}>
-          <ArrowLeft color="#252723" size={22} />
+          <ArrowLeft color={palette.ink} size={22} />
         </Pressable>
         <View style={styles.headerText}>
           <Text style={styles.dateText}>
@@ -74,8 +76,12 @@ export function DayPlanScreen({ date, dateKey, plan, checkIn, onBack, onSave }: 
           <View style={[styles.typePill, { backgroundColor: planColor }]}>
             <Text style={styles.typePillText}>第 {plan.week} 周 · {typeLabels[plan.type]}</Text>
           </View>
-          <Text style={styles.heroTitle}>{allDone ? "今天完成得很稳" : "照着清单做，完成后打卡"}</Text>
-          <Text style={styles.heroCopy}>训练、饮食和饮水会分别记录，日历会同步显示完成状态。</Text>
+          <View style={styles.heroTitleRow}>
+            <Text style={styles.heroTitle}>{allDone ? "今日闭环完成" : "今日训练进度"}</Text>
+            <Text style={styles.heroScore}>{trainingProgress}%</Text>
+          </View>
+          <ProgressBar progress={trainingProgress / 100} color={planColor} style={styles.heroProgress} />
+          <Text style={styles.heroCopy}>训练子项逐个打卡，饮食和饮水单独记录。</Text>
         </View>
 
         <View style={styles.checkPanel}>
@@ -83,15 +89,13 @@ export function DayPlanScreen({ date, dateKey, plan, checkIn, onBack, onSave }: 
           <CheckRow label="饮水 2400ml 完成" value={current.waterDone} onPress={() => updateCheckIn({ waterDone: !current.waterDone })} />
         </View>
 
-        <Section icon={<Dumbbell color="#2F7A67" size={20} />} title="训练">
+        <Section icon={<Dumbbell color={palette.moss} size={20} />} title="训练">
           <View style={styles.progressPanel}>
             <View style={styles.progressHeader}>
               <Text style={styles.progressLabel}>训练进度</Text>
               <Text style={[styles.progressValue, { color: planColor }]}>{trainingProgress}%</Text>
             </View>
-            <View style={styles.progressTrack}>
-              <View style={[styles.progressFill, { width: `${trainingProgress}%`, backgroundColor: planColor }]} />
-            </View>
+            <ProgressBar progress={trainingProgress / 100} color={planColor} style={styles.progressTrack} />
           </View>
           <View style={styles.trainingTaskList}>
             {plan.trainingTasks.map((task) => (
@@ -110,7 +114,7 @@ export function DayPlanScreen({ date, dateKey, plan, checkIn, onBack, onSave }: 
           ))}
         </Section>
 
-        <Section icon={<Utensils color="#9B5C2E" size={20} />} title="饮食">
+        <Section icon={<Utensils color={palette.clay} size={20} />} title="饮食">
           {plan.meals.map((item) => (
             <Text key={item} style={styles.listItem}>
               {item}
@@ -118,7 +122,7 @@ export function DayPlanScreen({ date, dateKey, plan, checkIn, onBack, onSave }: 
           ))}
         </Section>
 
-        <Section icon={<Droplets color="#4776A6" size={20} />} title="规则提醒">
+        <Section icon={<Droplets color={palette.steel} size={20} />} title="规则提醒">
           {[...globalRules, ...(plan.notes ?? []), ...dailyHabits].map((item) => (
             <Text key={item} style={styles.ruleItem}>
               {item}
@@ -160,7 +164,7 @@ function Section({ icon, title, children }: { icon: React.ReactNode; title: stri
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: "#F7F5EF",
+    backgroundColor: palette.canvas,
   },
   header: {
     flexDirection: "row",
@@ -176,21 +180,21 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: palette.surfaceRaised,
     borderWidth: 1,
-    borderColor: "#E2DFD6",
+    borderColor: palette.line,
   },
   headerText: {
     flex: 1,
   },
   dateText: {
-    color: "#76746D",
+    color: palette.muted,
     fontSize: 13,
     lineHeight: 18,
     fontWeight: "700",
   },
   title: {
-    color: "#20221F",
+    color: palette.ink,
     fontSize: 26,
     lineHeight: 32,
     fontWeight: "800",
@@ -200,9 +204,9 @@ const styles = StyleSheet.create({
     paddingBottom: 112,
   },
   hero: {
-    borderRadius: 8,
+    borderRadius: 24,
     borderWidth: 1.5,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: palette.surfaceRaised,
     padding: 16,
     marginBottom: 14,
   },
@@ -220,13 +224,31 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   heroTitle: {
-    color: "#22241F",
-    fontSize: 22,
+    color: palette.ink,
+    fontSize: 23,
     lineHeight: 28,
     fontWeight: "800",
   },
+  heroTitleRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    gap: 14,
+  },
+  heroScore: {
+    color: palette.charcoal,
+    fontSize: 36,
+    lineHeight: 39,
+    fontWeight: "900",
+  },
+  heroProgress: {
+    height: 10,
+    borderRadius: 999,
+    backgroundColor: "#E7E1D2",
+    marginTop: 14,
+  },
   heroCopy: {
-    color: "#68665F",
+    color: palette.muted,
     fontSize: 14,
     lineHeight: 21,
     fontWeight: "600",
@@ -238,9 +260,9 @@ const styles = StyleSheet.create({
   },
   progressPanel: {
     borderRadius: 8,
-    backgroundColor: "#F7F5EF",
+    backgroundColor: "#F3F1E7",
     borderWidth: 1,
-    borderColor: "#E4E0D8",
+    borderColor: palette.line,
     padding: 12,
   },
   progressHeader: {
@@ -250,7 +272,7 @@ const styles = StyleSheet.create({
     marginBottom: 9,
   },
   progressLabel: {
-    color: "#555750",
+    color: palette.muted,
     fontSize: 14,
     lineHeight: 20,
     fontWeight: "800",
@@ -262,22 +284,17 @@ const styles = StyleSheet.create({
   },
   progressTrack: {
     height: 10,
-    overflow: "hidden",
     borderRadius: 999,
-    backgroundColor: "#E4E0D8",
-  },
-  progressFill: {
-    height: "100%",
-    borderRadius: 999,
+    backgroundColor: "#E4DECF",
   },
   trainingTaskList: {
     gap: 9,
   },
   section: {
-    borderRadius: 8,
-    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    backgroundColor: palette.surfaceRaised,
     borderWidth: 1,
-    borderColor: "#E4E0D8",
+    borderColor: palette.line,
     padding: 15,
     marginBottom: 14,
   },
@@ -288,7 +305,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   sectionTitle: {
-    color: "#242620",
+    color: palette.ink,
     fontSize: 18,
     lineHeight: 24,
     fontWeight: "800",
@@ -297,13 +314,13 @@ const styles = StyleSheet.create({
     gap: 9,
   },
   listItem: {
-    color: "#33352F",
+    color: palette.ink,
     fontSize: 15,
     lineHeight: 22,
     fontWeight: "600",
   },
   ruleItem: {
-    color: "#585750",
+    color: palette.muted,
     fontSize: 14,
     lineHeight: 21,
     fontWeight: "600",
@@ -316,19 +333,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 12,
     paddingBottom: 28,
-    backgroundColor: "rgba(247,245,239,0.96)",
+    backgroundColor: "rgba(242,240,232,0.96)",
     borderTopWidth: 1,
-    borderTopColor: "#E7E2D8",
+    borderTopColor: palette.line,
   },
   primaryButton: {
     height: 54,
-    borderRadius: 8,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#2F7A67",
+    backgroundColor: palette.charcoal,
   },
   primaryDone: {
-    backgroundColor: "#293D35",
+    backgroundColor: palette.moss,
   },
   buttonPressed: {
     opacity: 0.82,

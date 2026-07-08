@@ -6,6 +6,7 @@ import { CheckInMap } from "../types/plan";
 import { addMonths, buildMonthGrid, formatChineseMonth, getCyclePosition } from "../utils/date";
 import { getPlanForWeekday } from "../data/trainingPlan";
 import { getCompletionStatus } from "../storage/checkIns";
+import { palette } from "../theme";
 
 type CalendarScreenProps = {
   month: Date;
@@ -19,29 +20,37 @@ const weekdays = ["一", "二", "三", "四", "五", "六", "日"];
 
 export function CalendarScreen({ month, cycleStart, checkIns, onMonthChange, onSelectDate }: CalendarScreenProps) {
   const days = buildMonthGrid(month);
+  const monthDays = days.filter((day) => day.inCurrentMonth);
+  const completeCount = monthDays.filter((day) => getCompletionStatus(checkIns[day.dateKey]) === "complete").length;
+  const partialCount = monthDays.filter((day) => getCompletionStatus(checkIns[day.dateKey]) === "partial").length;
 
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
         <View>
-          <Text style={styles.kicker}>每日训练打卡</Text>
+          <Text style={styles.kicker}>training ledger</Text>
           <Text style={styles.title}>{formatChineseMonth(month)}</Text>
         </View>
         <View style={styles.monthControls}>
           <Pressable accessibilityLabel="上个月" onPress={() => onMonthChange(addMonths(month, -1))} style={styles.iconButton}>
-            <ChevronLeft color="#252723" size={21} />
+            <ChevronLeft color={palette.ink} size={21} />
           </Pressable>
           <Pressable accessibilityLabel="下个月" onPress={() => onMonthChange(addMonths(month, 1))} style={styles.iconButton}>
-            <ChevronRight color="#252723" size={21} />
+            <ChevronRight color={palette.ink} size={21} />
           </Pressable>
         </View>
       </View>
 
       <View style={styles.summaryBand}>
-        <Text style={styles.summaryValue}>{Object.values(checkIns).filter((item) => getCompletionStatus(item) === "complete").length}</Text>
-        <Text style={styles.summaryText}>天完整打卡</Text>
-        <View style={styles.summaryDivider} />
-        <Text style={styles.summaryHint}>点击日期查看训练和饮食安排</Text>
+        <View style={styles.metricBlock}>
+          <Text style={styles.summaryValue}>{completeCount}</Text>
+          <Text style={styles.summaryText}>完整</Text>
+        </View>
+        <View style={styles.metricBlock}>
+          <Text style={styles.summaryValue}>{partialCount}</Text>
+          <Text style={styles.summaryText}>进行中</Text>
+        </View>
+        <Text style={styles.summaryHint}>点日期进入当天计划</Text>
       </View>
 
       <View style={styles.calendar}>
@@ -71,6 +80,7 @@ export function CalendarScreen({ month, cycleStart, checkIns, onMonthChange, onS
                   styles.dayCell,
                   day.isToday && styles.todayCell,
                   !day.inCurrentMonth && styles.outsideDay,
+                  status === "complete" && styles.completeCell,
                   pressed && styles.dayPressed,
                 ]}
               >
@@ -108,14 +118,15 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   kicker: {
-    color: "#76746D",
+    color: palette.muted,
     fontSize: 13,
     lineHeight: 18,
-    fontWeight: "700",
+    fontWeight: "900",
+    letterSpacing: 1.1,
   },
   title: {
-    color: "#20221F",
-    fontSize: 31,
+    color: palette.ink,
+    fontSize: 32,
     lineHeight: 38,
     fontWeight: "800",
   },
@@ -126,53 +137,49 @@ const styles = StyleSheet.create({
   iconButton: {
     width: 40,
     height: 40,
-    borderRadius: 8,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: palette.surfaceRaised,
     borderWidth: 1,
-    borderColor: "#E2DFD6",
+    borderColor: palette.line,
   },
   summaryBand: {
-    minHeight: 74,
+    minHeight: 82,
     flexDirection: "row",
     alignItems: "center",
-    borderRadius: 8,
-    backgroundColor: "#293D35",
+    borderRadius: 22,
+    backgroundColor: palette.charcoal,
     paddingHorizontal: 16,
     marginBottom: 18,
   },
+  metricBlock: {
+    width: 74,
+  },
   summaryValue: {
-    color: "#FFFFFF",
+    color: palette.lime,
     fontSize: 28,
     lineHeight: 34,
     fontWeight: "800",
   },
   summaryText: {
-    color: "#EDF5EE",
+    color: "#D8DDD1",
     fontSize: 15,
     lineHeight: 20,
     fontWeight: "700",
-    marginLeft: 7,
-  },
-  summaryDivider: {
-    width: 1,
-    height: 34,
-    backgroundColor: "rgba(255,255,255,0.24)",
-    marginHorizontal: 14,
   },
   summaryHint: {
     flex: 1,
-    color: "#CFDED3",
+    color: "#BEC9B9",
     fontSize: 13,
     lineHeight: 18,
     fontWeight: "600",
   },
   calendar: {
-    borderRadius: 8,
-    backgroundColor: "#FFFFFF",
+    borderRadius: 24,
+    backgroundColor: palette.surface,
     borderWidth: 1,
-    borderColor: "#E4E0D8",
+    borderColor: palette.line,
     paddingHorizontal: 10,
     paddingVertical: 12,
   },
@@ -183,7 +190,7 @@ const styles = StyleSheet.create({
   weekLabel: {
     width: `${100 / 7}%`,
     textAlign: "center",
-    color: "#858179",
+    color: palette.muted,
     fontSize: 13,
     lineHeight: 19,
     fontWeight: "700",
@@ -194,31 +201,34 @@ const styles = StyleSheet.create({
   },
   dayCell: {
     width: `${100 / 7}%`,
-    aspectRatio: 0.86,
+    aspectRatio: 0.88,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 8,
+    borderRadius: 16,
   },
   todayCell: {
-    backgroundColor: "#EDF5EE",
+    backgroundColor: "#EEF3D8",
+  },
+  completeCell: {
+    backgroundColor: "#F8F9EE",
   },
   outsideDay: {
     opacity: 0.42,
   },
   dayPressed: {
-    backgroundColor: "#F1EFE8",
+    backgroundColor: "#E8E2D3",
   },
   dayNumber: {
-    color: "#262823",
+    color: palette.ink,
     fontSize: 16,
     lineHeight: 22,
     fontWeight: "700",
   },
   mutedDay: {
-    color: "#8C887F",
+    color: "#96978F",
   },
   todayText: {
-    color: "#2F7A67",
+    color: palette.moss,
   },
   statusDot: {
     width: 6,

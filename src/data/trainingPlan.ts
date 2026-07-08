@@ -10,10 +10,10 @@ export const typeLabels: Record<PlanType, string> = {
 };
 
 export const typeColors: Record<PlanType, string> = {
-  cardio: "#2F7A67",
-  strength: "#9B5C2E",
-  recovery: "#4776A6",
-  rest: "#6F7472",
+  cardio: "#647A37",
+  strength: "#B8643D",
+  recovery: "#456C7B",
+  rest: "#73766E",
 };
 
 export const globalRules = [

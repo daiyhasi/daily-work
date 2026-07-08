@@ -1,11 +1,13 @@
 import { Settings } from "lucide-react-native";
 import { useEffect, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { Button, TextInput } from "react-native-paper";
 
 import { generatePlanFromPrompt } from "../api/planGeneration";
 import { defaultPlanPrompt } from "../data/planGenerationDemo";
 import { dailyHabits, getWeekPlans, globalRules, typeColors, typeLabels, weekdayLabels, weekModifiers } from "../data/trainingPlan";
 import { getPlanPrompt, savePlanPrompt } from "../storage/planPrompt";
+import { palette } from "../theme";
 
 export function PlanOverviewScreen() {
   const [prompt, setPrompt] = useState(defaultPlanPrompt);
@@ -54,11 +56,11 @@ export function PlanOverviewScreen() {
     <ScrollView style={styles.screen} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <View style={styles.header}>
         <View>
-          <Text style={styles.kicker}>固定计划 + AI Demo</Text>
+          <Text style={styles.kicker}>plan studio</Text>
           <Text style={styles.title}>四周训练计划</Text>
         </View>
         <View style={styles.settingsSlot}>
-          <Settings color="#76746D" size={21} />
+          <Settings color={palette.muted} size={21} />
         </View>
       </View>
 
@@ -67,8 +69,9 @@ export function PlanOverviewScreen() {
           <Text style={styles.aiKicker}>AI 生成 Demo</Text>
           <Text style={styles.saveStateText}>{saveState === "saved" ? "已保存" : "可编辑"}</Text>
         </View>
-        <Text style={[styles.panelTitle, styles.aiPanelTitle]}>计划提示词</Text>
+        <Text style={styles.panelTitle}>计划提示词</Text>
         <TextInput
+          mode="outlined"
           multiline
           value={prompt}
           onChangeText={(value) => {
@@ -76,21 +79,26 @@ export function PlanOverviewScreen() {
             setSaveState("idle");
           }}
           placeholder="输入你的身体情况、目标、饮食习惯和训练偏好"
-          placeholderTextColor="#8EA497"
           style={styles.promptInput}
+          outlineStyle={styles.promptOutline}
           textAlignVertical="top"
         />
         <View style={styles.actionRow}>
-          <Pressable onPress={handleSavePrompt} style={({ pressed }) => [styles.secondaryButton, pressed && styles.buttonPressed]}>
-            <Text style={styles.secondaryButtonText}>保存</Text>
-          </Pressable>
-          <Pressable
+          <Button mode="outlined" onPress={handleSavePrompt} style={styles.secondaryButton} labelStyle={styles.secondaryButtonText}>
+            保存
+          </Button>
+          <Button
+            mode="contained"
             disabled={generationState === "loading"}
+            loading={generationState === "loading"}
             onPress={handleGeneratePlan}
-            style={({ pressed }) => [styles.generateButton, generationState === "loading" && styles.buttonDisabled, pressed && styles.buttonPressed]}
+            buttonColor={palette.charcoal}
+            textColor={palette.lime}
+            style={styles.generateButton}
+            labelStyle={styles.generateButtonText}
           >
-            <Text style={styles.generateButtonText}>{generationState === "loading" ? "生成中..." : "生成计划"}</Text>
-          </Pressable>
+            {generationState === "loading" ? "生成中..." : "生成计划"}
+          </Button>
         </View>
         {generationMessage ? (
           <Text style={[styles.generationMessage, generationState === "error" && styles.errorMessage]}>{generationMessage}</Text>
@@ -160,13 +168,14 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   kicker: {
-    color: "#76746D",
+    color: palette.muted,
     fontSize: 13,
     lineHeight: 18,
-    fontWeight: "700",
+    fontWeight: "900",
+    letterSpacing: 1.1,
   },
   title: {
-    color: "#20221F",
+    color: palette.ink,
     fontSize: 31,
     lineHeight: 38,
     fontWeight: "800",
@@ -174,18 +183,18 @@ const styles = StyleSheet.create({
   settingsSlot: {
     width: 42,
     height: 42,
-    borderRadius: 8,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: palette.surfaceRaised,
     borderWidth: 1,
-    borderColor: "#E2DFD6",
+    borderColor: palette.line,
   },
   aiPanel: {
-    borderRadius: 8,
-    backgroundColor: "#293D35",
+    borderRadius: 24,
+    backgroundColor: "#E9EFD3",
     borderWidth: 1,
-    borderColor: "#20342D",
+    borderColor: "#D5DDAF",
     padding: 15,
     marginBottom: 16,
   },
@@ -197,29 +206,29 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   aiKicker: {
-    color: "#CFDED3",
+    color: palette.moss,
     fontSize: 13,
     lineHeight: 18,
     fontWeight: "800",
   },
   saveStateText: {
-    color: "#CFDED3",
+    color: palette.moss,
     fontSize: 13,
     lineHeight: 18,
     fontWeight: "800",
   },
   promptInput: {
-    minHeight: 168,
-    borderRadius: 8,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.24)",
-    color: "#20221F",
+    minHeight: 176,
+    backgroundColor: palette.surfaceRaised,
+    color: palette.ink,
     fontSize: 15,
     lineHeight: 22,
     fontWeight: "600",
     paddingHorizontal: 12,
-    paddingVertical: 12,
+  },
+  promptOutline: {
+    borderRadius: 18,
+    borderColor: "#C5CF96",
   },
   actionRow: {
     flexDirection: "row",
@@ -227,69 +236,52 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   secondaryButton: {
-    width: 86,
-    height: 46,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#FFFFFF",
+    width: 92,
+    borderRadius: 14,
+    borderColor: palette.moss,
   },
   generateButton: {
     flex: 1,
-    height: 46,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#A9D5C1",
-  },
-  buttonPressed: {
-    opacity: 0.78,
-  },
-  buttonDisabled: {
-    opacity: 0.62,
+    borderRadius: 14,
   },
   secondaryButtonText: {
-    color: "#293D35",
+    color: palette.moss,
     fontSize: 15,
     lineHeight: 21,
     fontWeight: "900",
   },
   generateButtonText: {
-    color: "#17372D",
     fontSize: 15,
     lineHeight: 21,
     fontWeight: "900",
   },
   generationMessage: {
-    color: "#DDE8E0",
+    color: palette.moss,
     fontSize: 13,
     lineHeight: 19,
     fontWeight: "700",
     marginTop: 10,
   },
   errorMessage: {
-    color: "#FFD3D3",
+    color: palette.danger,
   },
   rulesPanel: {
-    borderRadius: 8,
-    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    backgroundColor: palette.surfaceRaised,
     borderWidth: 1,
-    borderColor: "#E4E0D8",
+    borderColor: palette.line,
     padding: 15,
     marginBottom: 16,
   },
   panelTitle: {
-    color: "#242620",
+    color: palette.ink,
     fontSize: 18,
     lineHeight: 24,
     fontWeight: "800",
     marginBottom: 10,
   },
-  aiPanelTitle: {
-    color: "#FFFFFF",
-  },
   ruleText: {
-    color: "#56554E",
+    color: palette.muted,
     fontSize: 14,
     lineHeight: 21,
     fontWeight: "600",
@@ -302,13 +294,13 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   weekTitle: {
-    color: "#20221F",
+    color: palette.ink,
     fontSize: 22,
     lineHeight: 28,
     fontWeight: "800",
   },
   weekModifier: {
-    color: "#6E6B63",
+    color: palette.muted,
     fontSize: 14,
     lineHeight: 20,
     fontWeight: "600",
@@ -321,10 +313,10 @@ const styles = StyleSheet.create({
     minHeight: 92,
     flexDirection: "row",
     overflow: "hidden",
-    borderRadius: 8,
-    backgroundColor: "#FFFFFF",
+    borderRadius: 18,
+    backgroundColor: palette.surfaceRaised,
     borderWidth: 1,
-    borderColor: "#E4E0D8",
+    borderColor: palette.line,
   },
   typeBar: {
     width: 5,
@@ -335,20 +327,20 @@ const styles = StyleSheet.create({
     paddingVertical: 11,
   },
   dayTitle: {
-    color: "#292B26",
+    color: palette.ink,
     fontSize: 16,
     lineHeight: 22,
     fontWeight: "800",
   },
   dayType: {
-    color: "#77736B",
+    color: palette.muted,
     fontSize: 13,
     lineHeight: 18,
     fontWeight: "700",
     marginTop: 2,
   },
   dayPreview: {
-    color: "#4D4F49",
+    color: "#4E514B",
     fontSize: 14,
     lineHeight: 20,
     fontWeight: "600",
