@@ -12,6 +12,7 @@
       "backgroundColor": "#090B0D"
     },
     "ios": {
+      "bundleIdentifier": "com.daiyhasi.dailywork",
       "supportsTablet": true,
       "infoPlist": {
         "NSAppTransportSecurity": {
@@ -20,6 +21,7 @@
       }
     },
     "android": {
+      "package": "com.daiyhasi.dailywork",
       "usesCleartextTraffic": true,
       "adaptiveIcon": {
         "backgroundColor": "#090B0D",
