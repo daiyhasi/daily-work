@@ -7,9 +7,11 @@ type CheckRowProps = {
   label: string;
   value: boolean;
   onPress: () => void;
+  accentColor?: string;
+  meta?: string;
 };
 
-export function CheckRow({ label, value, onPress }: CheckRowProps) {
+export function CheckRow({ label, value, onPress, accentColor = palette.lime, meta }: CheckRowProps) {
   return (
     <Pressable
       accessibilityRole="checkbox"
@@ -17,8 +19,13 @@ export function CheckRow({ label, value, onPress }: CheckRowProps) {
       onPress={onPress}
       style={({ pressed }) => [styles.row, value && styles.rowDone, pressed && styles.pressed]}
     >
-      <View style={[styles.box, value && styles.boxChecked]}>{value ? <Check color="#FFFFFF" size={17} strokeWidth={3} /> : null}</View>
-      <Text style={[styles.label, value && styles.labelDone]}>{label}</Text>
+      <View style={[styles.box, value && styles.boxChecked, value && { backgroundColor: accentColor, borderColor: accentColor }]}>
+        {value ? <Check color={palette.black} size={17} strokeWidth={3} /> : null}
+      </View>
+      <View style={styles.textWrap}>
+        <Text style={[styles.label, value && { color: accentColor }]}>{label}</Text>
+        {meta ? <Text style={styles.meta}>{meta}</Text> : null}
+      </View>
     </Pressable>
   );
 }
@@ -29,7 +36,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    borderRadius: 14,
+    borderRadius: 18,
     backgroundColor: palette.surfaceRaised,
     paddingHorizontal: 14,
     paddingVertical: 10,
@@ -37,8 +44,8 @@ const styles = StyleSheet.create({
     borderColor: palette.line,
   },
   rowDone: {
-    backgroundColor: "#F4F7E8",
-    borderColor: "#CEDBA6",
+    backgroundColor: "#101812",
+    borderColor: "rgba(199,246,77,0.28)",
   },
   pressed: {
     opacity: 0.78,
@@ -46,25 +53,32 @@ const styles = StyleSheet.create({
   box: {
     width: 25,
     height: 25,
-    borderRadius: 9,
+    borderRadius: 10,
     borderWidth: 1.5,
-    borderColor: "#9EA48E",
+    borderColor: palette.quiet,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#F5F3EA",
+    backgroundColor: palette.charcoal,
   },
   boxChecked: {
-    borderColor: palette.moss,
-    backgroundColor: palette.moss,
+    borderColor: palette.lime,
+    backgroundColor: palette.lime,
+  },
+  textWrap: {
+    flex: 1,
+    minWidth: 0,
   },
   label: {
-    flex: 1,
     color: palette.ink,
     fontSize: 16,
     lineHeight: 22,
-    fontWeight: "600",
+    fontWeight: "800",
   },
-  labelDone: {
-    color: palette.moss,
+  meta: {
+    color: palette.quiet,
+    fontSize: 12,
+    lineHeight: 17,
+    fontWeight: "800",
+    marginTop: 2,
   },
 });

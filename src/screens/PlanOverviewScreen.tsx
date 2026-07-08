@@ -1,4 +1,4 @@
-import { Settings } from "lucide-react-native";
+import { Cpu, Settings, Sparkles } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { Button, TextInput } from "react-native-paper";
@@ -56,20 +56,26 @@ export function PlanOverviewScreen() {
     <ScrollView style={styles.screen} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <View style={styles.header}>
         <View>
-          <Text style={styles.kicker}>plan studio</Text>
-          <Text style={styles.title}>四周训练计划</Text>
+          <Text style={styles.brand}>PLAN LAB</Text>
+          <Text style={styles.subBrand}>四周训练计划</Text>
         </View>
         <View style={styles.settingsSlot}>
-          <Settings color={palette.muted} size={21} />
+          <Settings color={palette.ink} size={21} />
         </View>
       </View>
 
-      <View style={styles.aiPanel}>
-        <View style={styles.aiPanelHeader}>
-          <Text style={styles.aiKicker}>AI 生成 Demo</Text>
-          <Text style={styles.saveStateText}>{saveState === "saved" ? "已保存" : "可编辑"}</Text>
+      <View style={styles.console}>
+        <View style={styles.consoleTop}>
+          <View style={styles.consoleIcon}>
+            <Cpu color={palette.black} size={22} />
+          </View>
+          <View style={styles.consoleTitleWrap}>
+            <Text style={styles.consoleTitle}>生成控制台</Text>
+            <Text style={styles.consoleMeta}>{saveState === "saved" ? "提示词已保存" : "用户输入可编辑"}</Text>
+          </View>
+          <Sparkles color={palette.lime} size={22} />
         </View>
-        <Text style={styles.panelTitle}>计划提示词</Text>
+
         <TextInput
           mode="outlined"
           multiline
@@ -78,11 +84,17 @@ export function PlanOverviewScreen() {
             setPrompt(value);
             setSaveState("idle");
           }}
-          placeholder="输入你的身体情况、目标、饮食习惯和训练偏好"
+          placeholder="输入身体情况、训练目标、饮食习惯和限制"
           style={styles.promptInput}
+          contentStyle={styles.promptContent}
           outlineStyle={styles.promptOutline}
+          outlineColor={palette.line}
+          activeOutlineColor={palette.lime}
+          textColor={palette.ink}
+          placeholderTextColor={palette.quiet}
           textAlignVertical="top"
         />
+
         <View style={styles.actionRow}>
           <Button mode="outlined" onPress={handleSavePrompt} style={styles.secondaryButton} labelStyle={styles.secondaryButtonText}>
             保存
@@ -92,8 +104,8 @@ export function PlanOverviewScreen() {
             disabled={generationState === "loading"}
             loading={generationState === "loading"}
             onPress={handleGeneratePlan}
-            buttonColor={palette.charcoal}
-            textColor={palette.lime}
+            buttonColor={palette.lime}
+            textColor={palette.black}
             style={styles.generateButton}
             labelStyle={styles.generateButtonText}
           >
@@ -105,31 +117,38 @@ export function PlanOverviewScreen() {
         ) : null}
       </View>
 
-      <View style={styles.rulesPanel}>
-        <Text style={styles.panelTitle}>每日标准</Text>
-        {globalRules.map((rule) => (
-          <Text key={rule} style={styles.ruleText}>
-            {rule}
-          </Text>
-        ))}
+      <View style={styles.ruleDeck}>
+        <Text style={styles.deckTitle}>每日标准</Text>
+        <View style={styles.ruleGrid}>
+          {globalRules.map((rule) => (
+            <View key={rule} style={styles.ruleTile}>
+              <Text style={styles.ruleText}>{rule}</Text>
+            </View>
+          ))}
+        </View>
       </View>
 
       {[1, 2, 3, 4].map((week) => (
         <View key={week} style={styles.weekSection}>
           <View style={styles.weekHeading}>
-            <Text style={styles.weekTitle}>第 {week} 周</Text>
-            <Text style={styles.weekModifier}>{weekModifiers[week] ?? "基础适应周"}</Text>
+            <View>
+              <Text style={styles.weekTitle}>WEEK {week}</Text>
+              <Text style={styles.weekModifier}>{weekModifiers[week] ?? "基础适应周"}</Text>
+            </View>
+            <Text style={styles.weekCount}>7 DAYS</Text>
           </View>
 
           <View style={styles.dayList}>
             {getWeekPlans(week).map((plan) => (
               <View key={`${week}-${plan.weekday}`} style={styles.dayCard}>
-                <View style={[styles.typeBar, { backgroundColor: typeColors[plan.type] }]} />
+                <View style={styles.dayLeft}>
+                  <Text style={[styles.dayWeekday, { color: typeColors[plan.type] }]}>{weekdayLabels[plan.weekday - 1]}</Text>
+                  <View style={[styles.typePill, { borderColor: `${typeColors[plan.type]}77` }]}>
+                    <Text style={[styles.typePillText, { color: typeColors[plan.type] }]}>{typeLabels[plan.type]}</Text>
+                  </View>
+                </View>
                 <View style={styles.dayContent}>
-                  <Text style={styles.dayTitle}>
-                    {weekdayLabels[plan.weekday - 1]} · {plan.title}
-                  </Text>
-                  <Text style={styles.dayType}>{typeLabels[plan.type]}</Text>
+                  <Text style={styles.dayTitle}>{plan.title}</Text>
                   <Text style={styles.dayPreview} numberOfLines={2}>
                     {plan.training.join("；")}
                   </Text>
@@ -140,10 +159,10 @@ export function PlanOverviewScreen() {
         </View>
       ))}
 
-      <View style={styles.rulesPanel}>
-        <Text style={styles.panelTitle}>日常小习惯</Text>
+      <View style={styles.ruleDeck}>
+        <Text style={styles.deckTitle}>日常小习惯</Text>
         {dailyHabits.map((habit) => (
-          <Text key={habit} style={styles.ruleText}>
+          <Text key={habit} style={styles.habitText}>
             {habit}
           </Text>
         ))}
@@ -155,80 +174,97 @@ export function PlanOverviewScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
+    backgroundColor: palette.canvas,
   },
   content: {
-    paddingHorizontal: 20,
-    paddingTop: 18,
-    paddingBottom: 112,
+    paddingHorizontal: 18,
+    paddingTop: 14,
+    paddingBottom: 116,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 18,
+    marginBottom: 16,
   },
-  kicker: {
+  brand: {
+    color: palette.ink,
+    fontSize: 31,
+    lineHeight: 36,
+    fontWeight: "900",
+    letterSpacing: 0,
+  },
+  subBrand: {
     color: palette.muted,
     fontSize: 13,
     lineHeight: 18,
-    fontWeight: "900",
-    letterSpacing: 1.1,
-  },
-  title: {
-    color: palette.ink,
-    fontSize: 31,
-    lineHeight: 38,
     fontWeight: "800",
+    marginTop: 2,
   },
   settingsSlot: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
+    width: 44,
+    height: 44,
+    borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: palette.surfaceRaised,
     borderWidth: 1,
     borderColor: palette.line,
   },
-  aiPanel: {
-    borderRadius: 24,
-    backgroundColor: "#E9EFD3",
+  console: {
+    borderRadius: 32,
+    backgroundColor: palette.surface,
     borderWidth: 1,
-    borderColor: "#D5DDAF",
-    padding: 15,
+    borderColor: "rgba(199,246,77,0.32)",
+    padding: 16,
     marginBottom: 16,
   },
-  aiPanelHeader: {
+  consoleTop: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    gap: 10,
-    marginBottom: 12,
+    gap: 12,
+    marginBottom: 14,
   },
-  aiKicker: {
-    color: palette.moss,
+  consoleIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: palette.lime,
+  },
+  consoleTitleWrap: {
+    flex: 1,
+    minWidth: 0,
+  },
+  consoleTitle: {
+    color: palette.ink,
+    fontSize: 20,
+    lineHeight: 25,
+    fontWeight: "900",
+  },
+  consoleMeta: {
+    color: palette.muted,
     fontSize: 13,
     lineHeight: 18,
     fontWeight: "800",
-  },
-  saveStateText: {
-    color: palette.moss,
-    fontSize: 13,
-    lineHeight: 18,
-    fontWeight: "800",
+    marginTop: 2,
   },
   promptInput: {
-    minHeight: 176,
-    backgroundColor: palette.surfaceRaised,
+    minHeight: 178,
+    backgroundColor: palette.charcoal,
     color: palette.ink,
     fontSize: 15,
     lineHeight: 22,
-    fontWeight: "600",
+    fontWeight: "700",
+  },
+  promptContent: {
     paddingHorizontal: 12,
+    paddingTop: 12,
   },
   promptOutline: {
-    borderRadius: 18,
-    borderColor: "#C5CF96",
+    borderRadius: 22,
+    borderColor: palette.line,
   },
   actionRow: {
     flexDirection: "row",
@@ -236,16 +272,16 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   secondaryButton: {
-    width: 92,
-    borderRadius: 14,
-    borderColor: palette.moss,
+    width: 96,
+    borderRadius: 18,
+    borderColor: palette.line,
   },
   generateButton: {
     flex: 1,
-    borderRadius: 14,
+    borderRadius: 18,
   },
   secondaryButtonText: {
-    color: palette.moss,
+    color: palette.ink,
     fontSize: 15,
     lineHeight: 21,
     fontWeight: "900",
@@ -256,94 +292,132 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   generationMessage: {
-    color: palette.moss,
+    color: palette.lime,
     fontSize: 13,
     lineHeight: 19,
-    fontWeight: "700",
+    fontWeight: "800",
     marginTop: 10,
   },
   errorMessage: {
     color: palette.danger,
   },
-  rulesPanel: {
-    borderRadius: 20,
-    backgroundColor: palette.surfaceRaised,
+  ruleDeck: {
+    borderRadius: 28,
+    backgroundColor: palette.surface,
     borderWidth: 1,
     borderColor: palette.line,
     padding: 15,
     marginBottom: 16,
   },
-  panelTitle: {
+  deckTitle: {
     color: palette.ink,
-    fontSize: 18,
-    lineHeight: 24,
-    fontWeight: "800",
-    marginBottom: 10,
+    fontSize: 20,
+    lineHeight: 25,
+    fontWeight: "900",
+    marginBottom: 12,
+  },
+  ruleGrid: {
+    gap: 9,
+  },
+  ruleTile: {
+    borderRadius: 18,
+    backgroundColor: palette.surfaceRaised,
+    borderWidth: 1,
+    borderColor: palette.line,
+    padding: 12,
   },
   ruleText: {
     color: palette.muted,
     fontSize: 14,
     lineHeight: 21,
-    fontWeight: "600",
-    marginBottom: 8,
+    fontWeight: "700",
   },
   weekSection: {
     marginBottom: 20,
   },
   weekHeading: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    gap: 12,
     marginBottom: 10,
   },
   weekTitle: {
     color: palette.ink,
-    fontSize: 22,
-    lineHeight: 28,
-    fontWeight: "800",
+    fontSize: 28,
+    lineHeight: 33,
+    fontWeight: "900",
   },
   weekModifier: {
     color: palette.muted,
-    fontSize: 14,
-    lineHeight: 20,
-    fontWeight: "600",
+    fontSize: 13,
+    lineHeight: 19,
+    fontWeight: "700",
     marginTop: 3,
+  },
+  weekCount: {
+    color: palette.quiet,
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: "900",
   },
   dayList: {
     gap: 9,
   },
   dayCard: {
-    minHeight: 92,
+    minHeight: 102,
     flexDirection: "row",
-    overflow: "hidden",
-    borderRadius: 18,
-    backgroundColor: palette.surfaceRaised,
+    borderRadius: 24,
+    backgroundColor: palette.surface,
     borderWidth: 1,
     borderColor: palette.line,
+    padding: 12,
+    gap: 12,
   },
-  typeBar: {
-    width: 5,
+  dayLeft: {
+    width: 74,
+    justifyContent: "space-between",
+  },
+  dayWeekday: {
+    fontSize: 20,
+    lineHeight: 25,
+    fontWeight: "900",
+  },
+  typePill: {
+    alignSelf: "flex-start",
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  typePillText: {
+    fontSize: 11,
+    lineHeight: 15,
+    fontWeight: "900",
   },
   dayContent: {
     flex: 1,
-    paddingHorizontal: 13,
-    paddingVertical: 11,
+    minWidth: 0,
+    justifyContent: "center",
   },
   dayTitle: {
     color: palette.ink,
-    fontSize: 16,
+    fontSize: 17,
     lineHeight: 22,
-    fontWeight: "800",
-  },
-  dayType: {
-    color: palette.muted,
-    fontSize: 13,
-    lineHeight: 18,
-    fontWeight: "700",
-    marginTop: 2,
+    fontWeight: "900",
   },
   dayPreview: {
-    color: "#4E514B",
+    color: palette.muted,
     fontSize: 14,
-    lineHeight: 20,
-    fontWeight: "600",
-    marginTop: 5,
+    lineHeight: 21,
+    fontWeight: "700",
+    marginTop: 6,
+  },
+  habitText: {
+    color: palette.muted,
+    fontSize: 14,
+    lineHeight: 22,
+    fontWeight: "700",
+    marginBottom: 8,
   },
 });

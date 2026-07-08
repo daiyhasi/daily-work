@@ -60,9 +60,9 @@ export default function App() {
   if (loading || !cycleStart) {
     content = (
       <>
-        <StatusBar style="dark" />
+        <StatusBar style="light" />
         <View style={styles.loadingScreen}>
-          <ActivityIndicator color={palette.moss} />
+          <ActivityIndicator color={palette.lime} />
           <Text style={styles.loadingText}>正在准备训练计划</Text>
         </View>
       </>
@@ -74,7 +74,7 @@ export default function App() {
 
     content = (
       <>
-        <StatusBar style="dark" />
+        <StatusBar style="light" />
         <DayPlanScreen
           date={selectedDate}
           dateKey={dateKey}
@@ -88,7 +88,7 @@ export default function App() {
   } else {
     content = (
       <>
-        <StatusBar style="dark" />
+        <StatusBar style="light" />
         <View style={styles.main}>
           {activeTab === "calendar" ? (
             <CalendarScreen
@@ -106,13 +106,13 @@ export default function App() {
           <TabButton
             label="日历"
             active={activeTab === "calendar"}
-            icon={<CalendarDays color={activeTab === "calendar" ? palette.ink : "#D8DDD1"} size={20} />}
+            icon={<CalendarDays color={activeTab === "calendar" ? palette.black : palette.muted} size={20} strokeWidth={2.4} />}
             onPress={() => setActiveTab("calendar")}
           />
           <TabButton
             label="计划"
             active={activeTab === "plan"}
-            icon={<ClipboardList color={activeTab === "plan" ? palette.ink : "#D8DDD1"} size={20} />}
+            icon={<ClipboardList color={activeTab === "plan" ? palette.black : palette.muted} size={20} strokeWidth={2.4} />}
             onPress={() => setActiveTab("plan")}
           />
         </View>
@@ -165,27 +165,27 @@ const styles = StyleSheet.create({
   },
   tabBar: {
     position: "absolute",
-    left: 20,
-    right: 20,
+    left: 18,
+    right: 18,
     bottom: 24,
-    height: 64,
+    height: 66,
     flexDirection: "row",
     gap: 10,
-    borderRadius: 18,
-    backgroundColor: palette.charcoal,
+    borderRadius: 28,
+    backgroundColor: "rgba(14,17,20,0.96)",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
+    borderColor: "rgba(199,246,77,0.18)",
     padding: 7,
-    shadowColor: palette.charcoal,
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.12,
-    shadowRadius: 22,
-    elevation: 5,
+    shadowColor: palette.lime,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.14,
+    shadowRadius: 24,
+    elevation: 8,
   },
   tabButton: {
     flex: 1,
     minWidth: 0,
-    borderRadius: 13,
+    borderRadius: 22,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -198,12 +198,12 @@ const styles = StyleSheet.create({
     opacity: 0.78,
   },
   tabLabel: {
-    color: "#D8DDD1",
+    color: palette.muted,
     fontSize: 15,
     lineHeight: 20,
     fontWeight: "800",
   },
   tabLabelActive: {
-    color: palette.ink,
+    color: palette.black,
   },
 });

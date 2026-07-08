@@ -1,12 +1,11 @@
 import { ArrowLeft, Droplets, Dumbbell, Utensils } from "lucide-react-native";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { ProgressBar } from "react-native-paper";
 
 import { CheckRow } from "../components/CheckRow";
 import { dailyHabits, globalRules, typeColors, typeLabels, weekdayLabels } from "../data/trainingPlan";
 import { createEmptyCheckIn } from "../storage/checkIns";
-import { CheckIn, DayPlan, TrainingTask } from "../types/plan";
 import { palette } from "../theme";
+import { CheckIn, DayPlan, TrainingTask } from "../types/plan";
 import { formatChineseDate } from "../utils/date";
 
 type DayPlanScreenProps = {
@@ -23,6 +22,7 @@ export function DayPlanScreen({ date, dateKey, plan, checkIn, onBack, onSave }: 
   const planColor = typeColors[plan.type];
   const taskState = buildTaskState(plan.trainingTasks, current);
   const trainingProgress = getTrainingProgress(plan.trainingTasks, taskState);
+  const doneTaskCount = plan.trainingTasks.filter((task) => taskState[task.id]).length;
   const allDone = trainingProgress === 100 && current.dietDone && current.waterDone;
 
   function updateCheckIn(patch: Partial<CheckIn>) {
@@ -65,48 +65,71 @@ export function DayPlanScreen({ date, dateKey, plan, checkIn, onBack, onSave }: 
         </Pressable>
         <View style={styles.headerText}>
           <Text style={styles.dateText}>
-            {formatChineseDate(date)} · {weekdayLabels[plan.weekday - 1]}
+            {formatChineseDate(date)} / {weekdayLabels[plan.weekday - 1]}
           </Text>
           <Text style={styles.title}>{plan.title}</Text>
         </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={[styles.hero, { borderColor: planColor }]}>
-          <View style={[styles.typePill, { backgroundColor: planColor }]}>
-            <Text style={styles.typePillText}>第 {plan.week} 周 · {typeLabels[plan.type]}</Text>
+        <View style={[styles.hero, { borderColor: `${planColor}66` }]}>
+          <View style={styles.heroTop}>
+            <Text style={[styles.typeLabel, { color: planColor }]}>第 {plan.week} 周 / {typeLabels[plan.type]}</Text>
+            <Text style={styles.doneLabel}>{allDone ? "闭环完成" : `${doneTaskCount}/${plan.trainingTasks.length} 项`}</Text>
           </View>
-          <View style={styles.heroTitleRow}>
-            <Text style={styles.heroTitle}>{allDone ? "今日闭环完成" : "今日训练进度"}</Text>
-            <Text style={styles.heroScore}>{trainingProgress}%</Text>
-          </View>
-          <ProgressBar progress={trainingProgress / 100} color={planColor} style={styles.heroProgress} />
-          <Text style={styles.heroCopy}>训练子项逐个打卡，饮食和饮水单独记录。</Text>
-        </View>
 
-        <View style={styles.checkPanel}>
-          <CheckRow label="饮食完成" value={current.dietDone} onPress={() => updateCheckIn({ dietDone: !current.dietDone })} />
-          <CheckRow label="饮水 2400ml 完成" value={current.waterDone} onPress={() => updateCheckIn({ waterDone: !current.waterDone })} />
-        </View>
-
-        <Section icon={<Dumbbell color={palette.moss} size={20} />} title="训练">
-          <View style={styles.progressPanel}>
-            <View style={styles.progressHeader}>
-              <Text style={styles.progressLabel}>训练进度</Text>
-              <Text style={[styles.progressValue, { color: planColor }]}>{trainingProgress}%</Text>
+          <View style={styles.heroNumberRow}>
+            <Text style={[styles.heroNumber, { color: planColor }]}>{trainingProgress}</Text>
+            <Text style={[styles.heroPercent, { color: planColor }]}>%</Text>
+            <View style={styles.heroCopyBox}>
+              <Text style={styles.heroCopy}>训练拆成细项打卡，饮食和饮水独立记录。</Text>
             </View>
-            <ProgressBar progress={trainingProgress / 100} color={planColor} style={styles.progressTrack} />
           </View>
+
+          <SegmentProgress progress={trainingProgress} color={planColor} />
+        </View>
+
+        <View style={styles.quickGrid}>
+          <Pressable
+            onPress={() => updateCheckIn({ dietDone: !current.dietDone })}
+            style={({ pressed }) => [styles.quickTile, current.dietDone && styles.quickTileDone, pressed && styles.pressedPanel]}
+          >
+            <Utensils color={current.dietDone ? palette.black : palette.ember} size={22} />
+            <Text style={[styles.quickValue, current.dietDone && styles.quickDoneText]}>{current.dietDone ? "DONE" : "WAIT"}</Text>
+            <Text style={[styles.quickLabel, current.dietDone && styles.quickDoneText]}>饮食</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => updateCheckIn({ waterDone: !current.waterDone })}
+            style={({ pressed }) => [styles.quickTile, current.waterDone && styles.quickTileDone, pressed && styles.pressedPanel]}
+          >
+            <Droplets color={current.waterDone ? palette.black : palette.cyan} size={22} />
+            <Text style={[styles.quickValue, current.waterDone && styles.quickDoneText]}>{current.waterDone ? "2400" : "0/2400"}</Text>
+            <Text style={[styles.quickLabel, current.waterDone && styles.quickDoneText]}>饮水 ml</Text>
+          </Pressable>
+        </View>
+
+        <Section icon={<Dumbbell color={planColor} size={20} />} title="训练轨道">
           <View style={styles.trainingTaskList}>
-            {plan.trainingTasks.map((task) => (
-              <CheckRow
-                key={task.id}
-                label={`${task.label} +${task.points}%`}
-                value={taskState[task.id]}
-                onPress={() => updateTrainingTask(task.id)}
-              />
+            {plan.trainingTasks.map((task, index) => (
+              <View key={task.id} style={styles.taskLine}>
+                <View style={styles.taskIndexWrap}>
+                  <Text style={[styles.taskIndex, taskState[task.id] && { color: planColor }]}>{String(index + 1).padStart(2, "0")}</Text>
+                </View>
+                <View style={styles.taskContent}>
+                  <CheckRow
+                    label={task.label}
+                    meta={`+${task.points}%`}
+                    value={taskState[task.id]}
+                    accentColor={planColor}
+                    onPress={() => updateTrainingTask(task.id)}
+                  />
+                </View>
+              </View>
             ))}
           </View>
+        </Section>
+
+        <Section icon={<Dumbbell color={palette.muted} size={20} />} title="训练原文">
           {plan.training.map((item) => (
             <Text key={item} style={styles.listItem}>
               {item}
@@ -114,7 +137,7 @@ export function DayPlanScreen({ date, dateKey, plan, checkIn, onBack, onSave }: 
           ))}
         </Section>
 
-        <Section icon={<Utensils color={palette.clay} size={20} />} title="饮食">
+        <Section icon={<Utensils color={palette.ember} size={20} />} title="饮食">
           {plan.meals.map((item) => (
             <Text key={item} style={styles.listItem}>
               {item}
@@ -122,7 +145,7 @@ export function DayPlanScreen({ date, dateKey, plan, checkIn, onBack, onSave }: 
           ))}
         </Section>
 
-        <Section icon={<Droplets color={palette.steel} size={20} />} title="规则提醒">
+        <Section icon={<Droplets color={palette.cyan} size={20} />} title="规则提醒">
           {[...globalRules, ...(plan.notes ?? []), ...dailyHabits].map((item) => (
             <Text key={item} style={styles.ruleItem}>
               {item}
@@ -133,7 +156,7 @@ export function DayPlanScreen({ date, dateKey, plan, checkIn, onBack, onSave }: 
 
       <View style={styles.footer}>
         <Pressable onPress={completeToday} style={({ pressed }) => [styles.primaryButton, allDone && styles.primaryDone, pressed && styles.buttonPressed]}>
-          <Text style={styles.primaryText}>{allDone ? "今日已完整打卡" : "完成今日打卡"}</Text>
+          <Text style={[styles.primaryText, allDone && styles.primaryDoneText]}>{allDone ? "今日已完整打卡" : "完成今日打卡"}</Text>
         </Pressable>
       </View>
     </View>
@@ -147,6 +170,17 @@ function buildTaskState(tasks: TrainingTask[], checkIn: CheckIn) {
 function getTrainingProgress(tasks: TrainingTask[], taskState: Record<string, boolean>) {
   const progress = tasks.reduce((total, task) => total + (taskState[task.id] ? task.points : 0), 0);
   return Math.min(progress, 100);
+}
+
+function SegmentProgress({ progress, color }: { progress: number; color: string }) {
+  return (
+    <View style={styles.segmentWrap}>
+      {Array.from({ length: 20 }, (_, index) => {
+        const active = index < Math.round(progress / 5);
+        return <View key={index} style={[styles.segment, active && { backgroundColor: color }]} />;
+      })}
+    </View>
+  );
 }
 
 function Section({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
@@ -170,14 +204,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    paddingHorizontal: 20,
-    paddingTop: 18,
+    paddingHorizontal: 18,
+    paddingTop: 14,
     paddingBottom: 12,
   },
   backButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 8,
+    width: 44,
+    height: 44,
+    borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: palette.surfaceRaised,
@@ -186,113 +220,153 @@ const styles = StyleSheet.create({
   },
   headerText: {
     flex: 1,
+    minWidth: 0,
   },
   dateText: {
     color: palette.muted,
     fontSize: 13,
     lineHeight: 18,
-    fontWeight: "700",
+    fontWeight: "800",
   },
   title: {
     color: palette.ink,
-    fontSize: 26,
+    fontSize: 27,
     lineHeight: 32,
-    fontWeight: "800",
+    fontWeight: "900",
   },
   content: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 18,
     paddingBottom: 112,
   },
   hero: {
-    borderRadius: 24,
-    borderWidth: 1.5,
-    backgroundColor: palette.surfaceRaised,
-    padding: 16,
+    borderRadius: 32,
+    borderWidth: 1,
+    backgroundColor: palette.surface,
+    padding: 18,
     marginBottom: 14,
   },
-  typePill: {
-    alignSelf: "flex-start",
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    marginBottom: 14,
-  },
-  typePillText: {
-    color: "#FFFFFF",
-    fontSize: 12,
-    lineHeight: 16,
-    fontWeight: "800",
-  },
-  heroTitle: {
-    color: palette.ink,
-    fontSize: 23,
-    lineHeight: 28,
-    fontWeight: "800",
-  },
-  heroTitleRow: {
+  heroTop: {
     flexDirection: "row",
-    alignItems: "flex-end",
+    alignItems: "center",
     justifyContent: "space-between",
-    gap: 14,
+    gap: 12,
   },
-  heroScore: {
-    color: palette.charcoal,
-    fontSize: 36,
-    lineHeight: 39,
+  typeLabel: {
+    flex: 1,
+    fontSize: 13,
+    lineHeight: 18,
     fontWeight: "900",
   },
-  heroProgress: {
-    height: 10,
-    borderRadius: 999,
-    backgroundColor: "#E7E1D2",
-    marginTop: 14,
+  doneLabel: {
+    color: palette.muted,
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: "900",
+  },
+  heroNumberRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginTop: 18,
+  },
+  heroNumber: {
+    fontSize: 82,
+    lineHeight: 84,
+    fontWeight: "900",
+  },
+  heroPercent: {
+    fontSize: 24,
+    lineHeight: 32,
+    fontWeight: "900",
+    marginTop: 12,
+  },
+  heroCopyBox: {
+    flex: 1,
+    alignSelf: "center",
+    marginLeft: 16,
+    borderLeftWidth: 1,
+    borderLeftColor: palette.line,
+    paddingLeft: 14,
   },
   heroCopy: {
     color: palette.muted,
     fontSize: 14,
     lineHeight: 21,
-    fontWeight: "600",
-    marginTop: 6,
+    fontWeight: "700",
   },
-  checkPanel: {
-    gap: 9,
-    marginBottom: 16,
+  segmentWrap: {
+    flexDirection: "row",
+    gap: 4,
+    marginTop: 18,
   },
-  progressPanel: {
-    borderRadius: 8,
-    backgroundColor: "#F3F1E7",
+  segment: {
+    flex: 1,
+    height: 18,
+    borderRadius: 6,
+    backgroundColor: "#252E34",
+  },
+  quickGrid: {
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 14,
+  },
+  quickTile: {
+    flex: 1,
+    minHeight: 106,
+    borderRadius: 26,
+    backgroundColor: palette.surfaceRaised,
     borderWidth: 1,
     borderColor: palette.line,
-    padding: 12,
-  },
-  progressHeader: {
-    flexDirection: "row",
-    alignItems: "center",
+    padding: 14,
     justifyContent: "space-between",
-    marginBottom: 9,
   },
-  progressLabel: {
+  quickTileDone: {
+    backgroundColor: palette.lime,
+    borderColor: palette.lime,
+  },
+  quickValue: {
+    color: palette.ink,
+    fontSize: 25,
+    lineHeight: 30,
+    fontWeight: "900",
+    marginTop: 12,
+  },
+  quickLabel: {
     color: palette.muted,
-    fontSize: 14,
-    lineHeight: 20,
-    fontWeight: "800",
-  },
-  progressValue: {
-    fontSize: 20,
-    lineHeight: 24,
+    fontSize: 13,
+    lineHeight: 18,
     fontWeight: "900",
   },
-  progressTrack: {
-    height: 10,
-    borderRadius: 999,
-    backgroundColor: "#E4DECF",
+  quickDoneText: {
+    color: palette.black,
+  },
+  pressedPanel: {
+    opacity: 0.82,
   },
   trainingTaskList: {
-    gap: 9,
+    gap: 10,
+  },
+  taskLine: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  taskIndexWrap: {
+    width: 34,
+    alignItems: "center",
+    paddingTop: 17,
+  },
+  taskIndex: {
+    color: palette.quiet,
+    fontSize: 12,
+    lineHeight: 17,
+    fontWeight: "900",
+  },
+  taskContent: {
+    flex: 1,
+    minWidth: 0,
   },
   section: {
-    borderRadius: 20,
-    backgroundColor: palette.surfaceRaised,
+    borderRadius: 26,
+    backgroundColor: palette.surface,
     borderWidth: 1,
     borderColor: palette.line,
     padding: 15,
@@ -302,13 +376,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 9,
-    marginBottom: 10,
+    marginBottom: 12,
   },
   sectionTitle: {
     color: palette.ink,
-    fontSize: 18,
+    fontSize: 19,
     lineHeight: 24,
-    fontWeight: "800",
+    fontWeight: "900",
   },
   sectionBody: {
     gap: 9,
@@ -316,44 +390,47 @@ const styles = StyleSheet.create({
   listItem: {
     color: palette.ink,
     fontSize: 15,
-    lineHeight: 22,
-    fontWeight: "600",
+    lineHeight: 23,
+    fontWeight: "700",
   },
   ruleItem: {
     color: palette.muted,
     fontSize: 14,
-    lineHeight: 21,
-    fontWeight: "600",
+    lineHeight: 22,
+    fontWeight: "700",
   },
   footer: {
     position: "absolute",
     left: 0,
     right: 0,
     bottom: 0,
-    paddingHorizontal: 20,
+    paddingHorizontal: 18,
     paddingTop: 12,
     paddingBottom: 28,
-    backgroundColor: "rgba(242,240,232,0.96)",
+    backgroundColor: "rgba(9,11,13,0.96)",
     borderTopWidth: 1,
     borderTopColor: palette.line,
   },
   primaryButton: {
-    height: 54,
-    borderRadius: 16,
+    height: 56,
+    borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: palette.charcoal,
+    backgroundColor: palette.ink,
   },
   primaryDone: {
-    backgroundColor: palette.moss,
+    backgroundColor: palette.lime,
   },
   buttonPressed: {
     opacity: 0.82,
   },
   primaryText: {
-    color: "#FFFFFF",
+    color: palette.black,
     fontSize: 16,
     lineHeight: 22,
-    fontWeight: "800",
+    fontWeight: "900",
+  },
+  primaryDoneText: {
+    color: palette.black,
   },
 });

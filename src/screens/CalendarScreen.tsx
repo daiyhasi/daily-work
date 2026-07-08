@@ -1,12 +1,11 @@
-import { ChevronLeft, ChevronRight } from "lucide-react-native";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { ChevronLeft, ChevronRight, Flame, MoveUpRight } from "lucide-react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
-import { typeColors } from "../data/trainingPlan";
-import { CheckInMap } from "../types/plan";
-import { addMonths, buildMonthGrid, formatChineseMonth, getCyclePosition } from "../utils/date";
-import { getPlanForWeekday } from "../data/trainingPlan";
+import { getPlanForWeekday, typeColors, typeLabels, weekdayLabels } from "../data/trainingPlan";
 import { getCompletionStatus } from "../storage/checkIns";
 import { palette } from "../theme";
+import { CheckIn, CheckInMap, TrainingTask } from "../types/plan";
+import { addDays, addMonths, buildMonthGrid, formatChineseDate, formatChineseMonth, getCyclePosition, startOfWeekMonday, toDateKey } from "../utils/date";
 
 type CalendarScreenProps = {
   month: Date;
@@ -23,13 +22,22 @@ export function CalendarScreen({ month, cycleStart, checkIns, onMonthChange, onS
   const monthDays = days.filter((day) => day.inCurrentMonth);
   const completeCount = monthDays.filter((day) => getCompletionStatus(checkIns[day.dateKey]) === "complete").length;
   const partialCount = monthDays.filter((day) => getCompletionStatus(checkIns[day.dateKey]) === "partial").length;
+  const today = new Date();
+  const todayKey = toDateKey(today);
+  const todayPosition = getCyclePosition(today, cycleStart);
+  const todayPlan = getPlanForWeekday(todayPosition.week, todayPosition.weekday);
+  const todayCheckIn = checkIns[todayKey];
+  const todayTrainingProgress = getTrainingProgress(todayPlan.trainingTasks, todayCheckIn);
+  const todayOverall = Math.round((todayTrainingProgress + (todayCheckIn?.dietDone ? 100 : 0) + (todayCheckIn?.waterDone ? 100 : 0)) / 3);
+  const weekStart = startOfWeekMonday(today);
+  const currentWeekDays = Array.from({ length: 7 }, (_, index) => addDays(weekStart, index));
 
   return (
-    <View style={styles.screen}>
-      <View style={styles.header}>
+    <ScrollView style={styles.screen} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <View style={styles.topBar}>
         <View>
-          <Text style={styles.kicker}>training ledger</Text>
-          <Text style={styles.title}>{formatChineseMonth(month)}</Text>
+          <Text style={styles.brand}>DAILY WORK</Text>
+          <Text style={styles.subBrand}>{formatChineseMonth(month)}</Text>
         </View>
         <View style={styles.monthControls}>
           <Pressable accessibilityLabel="上个月" onPress={() => onMonthChange(addMonths(month, -1))} style={styles.iconButton}>
@@ -41,16 +49,74 @@ export function CalendarScreen({ month, cycleStart, checkIns, onMonthChange, onS
         </View>
       </View>
 
-      <View style={styles.summaryBand}>
-        <View style={styles.metricBlock}>
-          <Text style={styles.summaryValue}>{completeCount}</Text>
-          <Text style={styles.summaryText}>完整</Text>
+      <Pressable onPress={() => onSelectDate(today)} style={({ pressed }) => [styles.todayPanel, pressed && styles.pressedPanel]}>
+        <View style={styles.todayMetaRow}>
+          <View style={styles.fireBadge}>
+            <Flame color={palette.black} size={18} fill={palette.black} />
+          </View>
+          <Text style={styles.todayMeta}>
+            {formatChineseDate(today)} / {weekdayLabels[todayPlan.weekday - 1]}
+          </Text>
+          <MoveUpRight color={palette.lime} size={20} />
         </View>
-        <View style={styles.metricBlock}>
-          <Text style={styles.summaryValue}>{partialCount}</Text>
-          <Text style={styles.summaryText}>进行中</Text>
+
+        <View style={styles.todayMainRow}>
+          <View style={styles.todayCopy}>
+            <Text style={styles.todayTitle}>{todayPlan.title}</Text>
+            <Text style={styles.todayType}>第 {todayPlan.week} 周 / {typeLabels[todayPlan.type]}</Text>
+          </View>
+          <View style={styles.scoreBlock}>
+            <Text style={styles.scoreNumber}>{todayOverall}</Text>
+            <Text style={styles.scoreUnit}>%</Text>
+          </View>
         </View>
-        <Text style={styles.summaryHint}>点日期进入当天计划</Text>
+
+        <View style={styles.segmentStrip}>
+          {Array.from({ length: 12 }, (_, index) => {
+            const active = index < Math.round(todayOverall / 8.34);
+            return <View key={index} style={[styles.segment, active && styles.segmentActive]} />;
+          })}
+        </View>
+
+        <View style={styles.todayStats}>
+          <Metric label="训练" value={`${todayTrainingProgress}%`} />
+          <Metric label="饮食" value={todayCheckIn?.dietDone ? "DONE" : "WAIT"} />
+          <Metric label="饮水" value={todayCheckIn?.waterDone ? "DONE" : "WAIT"} />
+        </View>
+      </Pressable>
+
+      <View style={styles.weekRail}>
+        {currentWeekDays.map((date) => {
+          const key = toDateKey(date);
+          const position = getCyclePosition(date, cycleStart);
+          const plan = getPlanForWeekday(position.week, position.weekday);
+          const status = getCompletionStatus(checkIns[key]);
+          const color = typeColors[plan.type];
+
+          return (
+            <Pressable key={key} onPress={() => onSelectDate(date)} style={[styles.weekDay, key === todayKey && styles.weekDayToday]}>
+              <Text style={[styles.weekDayLabel, key === todayKey && styles.weekDayTodayText]}>{weekdays[position.weekday - 1]}</Text>
+              <Text style={[styles.weekDayNumber, key === todayKey && styles.weekDayTodayText]}>{date.getDate()}</Text>
+              <View
+                style={[
+                  styles.weekStatus,
+                  {
+                    backgroundColor: status === "empty" ? palette.line : color,
+                    opacity: status === "partial" ? 0.45 : 1,
+                  },
+                ]}
+              />
+            </Pressable>
+          );
+        })}
+      </View>
+
+      <View style={styles.monthHeader}>
+        <Text style={styles.monthTitle}>月历矩阵</Text>
+        <View style={styles.monthMetrics}>
+          <Text style={styles.monthMetric}>{completeCount} 完整</Text>
+          <Text style={styles.monthMetric}>{partialCount} 进行中</Text>
+        </View>
       </View>
 
       <View style={styles.calendar}>
@@ -87,96 +153,277 @@ export function CalendarScreen({ month, cycleStart, checkIns, onMonthChange, onS
                 <Text style={[styles.dayNumber, !day.inCurrentMonth && styles.mutedDay, day.isToday && styles.todayText]}>
                   {day.date.getDate()}
                 </Text>
-                <View
-                  style={[
-                    styles.statusDot,
-                    {
-                      backgroundColor: status === "empty" ? "transparent" : planColor,
-                      opacity: status === "partial" ? 0.38 : 1,
-                    },
-                  ]}
-                />
+                <View style={styles.daySignals}>
+                  <View style={[styles.typeNeedle, { backgroundColor: planColor }]} />
+                  <View
+                    style={[
+                      styles.statusDot,
+                      {
+                        backgroundColor: status === "empty" ? "transparent" : planColor,
+                        opacity: status === "partial" ? 0.38 : 1,
+                      },
+                    ]}
+                  />
+                </View>
               </Pressable>
             );
           })}
         </View>
       </View>
+    </ScrollView>
+  );
+}
+
+function Metric({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.metric}>
+      <Text style={styles.metricValue}>{value}</Text>
+      <Text style={styles.metricLabel}>{label}</Text>
     </View>
   );
+}
+
+function getTrainingProgress(tasks: TrainingTask[], checkIn?: CheckIn) {
+  if (!checkIn) {
+    return 0;
+  }
+
+  if (checkIn.trainingDone && !checkIn.trainingTaskDone) {
+    return 100;
+  }
+
+  const progress = tasks.reduce((total, task) => total + (checkIn.trainingTaskDone?.[task.id] ? task.points : 0), 0);
+  return Math.min(progress, 100);
 }
 
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 18,
+    backgroundColor: palette.canvas,
   },
-  header: {
+  content: {
+    paddingHorizontal: 18,
+    paddingTop: 14,
+    paddingBottom: 116,
+  },
+  topBar: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 18,
+    marginBottom: 16,
   },
-  kicker: {
+  brand: {
+    color: palette.ink,
+    fontSize: 30,
+    lineHeight: 35,
+    fontWeight: "900",
+    letterSpacing: 0,
+  },
+  subBrand: {
     color: palette.muted,
     fontSize: 13,
     lineHeight: 18,
-    fontWeight: "900",
-    letterSpacing: 1.1,
-  },
-  title: {
-    color: palette.ink,
-    fontSize: 32,
-    lineHeight: 38,
     fontWeight: "800",
+    marginTop: 2,
   },
   monthControls: {
     flexDirection: "row",
     gap: 8,
   },
   iconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 14,
+    width: 42,
+    height: 42,
+    borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: palette.surfaceRaised,
     borderWidth: 1,
     borderColor: palette.line,
   },
-  summaryBand: {
-    minHeight: 82,
+  todayPanel: {
+    minHeight: 238,
+    borderRadius: 32,
+    backgroundColor: palette.surface,
+    borderWidth: 1,
+    borderColor: "rgba(199,246,77,0.34)",
+    padding: 18,
+    marginBottom: 14,
+    overflow: "hidden",
+  },
+  pressedPanel: {
+    opacity: 0.86,
+  },
+  todayMetaRow: {
     flexDirection: "row",
     alignItems: "center",
-    borderRadius: 22,
-    backgroundColor: palette.charcoal,
-    paddingHorizontal: 16,
-    marginBottom: 18,
+    gap: 10,
   },
-  metricBlock: {
-    width: 74,
+  fireBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: palette.lime,
   },
-  summaryValue: {
-    color: palette.lime,
-    fontSize: 28,
-    lineHeight: 34,
-    fontWeight: "800",
-  },
-  summaryText: {
-    color: "#D8DDD1",
-    fontSize: 15,
-    lineHeight: 20,
-    fontWeight: "700",
-  },
-  summaryHint: {
+  todayMeta: {
     flex: 1,
-    color: "#BEC9B9",
+    color: palette.muted,
     fontSize: 13,
     lineHeight: 18,
-    fontWeight: "600",
+    fontWeight: "800",
+  },
+  todayMainRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    gap: 16,
+    marginTop: 28,
+  },
+  todayCopy: {
+    flex: 1,
+  },
+  todayTitle: {
+    color: palette.ink,
+    fontSize: 34,
+    lineHeight: 38,
+    fontWeight: "900",
+  },
+  todayType: {
+    color: palette.cyan,
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: "900",
+    marginTop: 8,
+  },
+  scoreBlock: {
+    minWidth: 96,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "flex-end",
+  },
+  scoreNumber: {
+    color: palette.lime,
+    fontSize: 64,
+    lineHeight: 66,
+    fontWeight: "900",
+  },
+  scoreUnit: {
+    color: palette.lime,
+    fontSize: 20,
+    lineHeight: 28,
+    fontWeight: "900",
+    marginTop: 8,
+  },
+  segmentStrip: {
+    flexDirection: "row",
+    gap: 5,
+    marginTop: 22,
+  },
+  segment: {
+    flex: 1,
+    height: 8,
+    borderRadius: 999,
+    backgroundColor: "#263036",
+  },
+  segmentActive: {
+    backgroundColor: palette.lime,
+  },
+  todayStats: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 18,
+  },
+  metric: {
+    flex: 1,
+    minHeight: 58,
+    borderRadius: 18,
+    backgroundColor: "#0D1114",
+    borderWidth: 1,
+    borderColor: palette.line,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+  },
+  metricValue: {
+    color: palette.ink,
+    fontSize: 17,
+    lineHeight: 22,
+    fontWeight: "900",
+  },
+  metricLabel: {
+    color: palette.quiet,
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: "800",
+    marginTop: 2,
+  },
+  weekRail: {
+    flexDirection: "row",
+    gap: 7,
+    marginBottom: 20,
+  },
+  weekDay: {
+    flex: 1,
+    minWidth: 0,
+    minHeight: 86,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: palette.surfaceRaised,
+    borderWidth: 1,
+    borderColor: palette.line,
+    paddingVertical: 9,
+  },
+  weekDayToday: {
+    backgroundColor: palette.lime,
+    borderColor: palette.lime,
+  },
+  weekDayLabel: {
+    color: palette.muted,
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: "900",
+  },
+  weekDayNumber: {
+    color: palette.ink,
+    fontSize: 19,
+    lineHeight: 24,
+    fontWeight: "900",
+    marginTop: 4,
+  },
+  weekDayTodayText: {
+    color: palette.black,
+  },
+  weekStatus: {
+    width: 18,
+    height: 3,
+    borderRadius: 999,
+    marginTop: 8,
+  },
+  monthHeader: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    gap: 12,
+    marginBottom: 10,
+  },
+  monthTitle: {
+    color: palette.ink,
+    fontSize: 22,
+    lineHeight: 28,
+    fontWeight: "900",
+  },
+  monthMetrics: {
+    alignItems: "flex-end",
+  },
+  monthMetric: {
+    color: palette.muted,
+    fontSize: 12,
+    lineHeight: 17,
+    fontWeight: "800",
   },
   calendar: {
-    borderRadius: 24,
+    borderRadius: 28,
     backgroundColor: palette.surface,
     borderWidth: 1,
     borderColor: palette.line,
@@ -190,10 +437,10 @@ const styles = StyleSheet.create({
   weekLabel: {
     width: `${100 / 7}%`,
     textAlign: "center",
-    color: palette.muted,
-    fontSize: 13,
-    lineHeight: 19,
-    fontWeight: "700",
+    color: palette.quiet,
+    fontSize: 12,
+    lineHeight: 18,
+    fontWeight: "900",
   },
   grid: {
     flexDirection: "row",
@@ -201,39 +448,53 @@ const styles = StyleSheet.create({
   },
   dayCell: {
     width: `${100 / 7}%`,
-    aspectRatio: 0.88,
+    aspectRatio: 0.82,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 16,
+    borderRadius: 17,
   },
   todayCell: {
-    backgroundColor: "#EEF3D8",
+    backgroundColor: "rgba(199,246,77,0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(199,246,77,0.28)",
   },
   completeCell: {
-    backgroundColor: "#F8F9EE",
+    backgroundColor: "rgba(199,246,77,0.08)",
   },
   outsideDay: {
-    opacity: 0.42,
+    opacity: 0.28,
   },
   dayPressed: {
-    backgroundColor: "#E8E2D3",
+    backgroundColor: "#202A30",
   },
   dayNumber: {
     color: palette.ink,
-    fontSize: 16,
-    lineHeight: 22,
-    fontWeight: "700",
+    fontSize: 15,
+    lineHeight: 20,
+    fontWeight: "900",
   },
   mutedDay: {
-    color: "#96978F",
+    color: palette.quiet,
   },
   todayText: {
-    color: palette.moss,
+    color: palette.lime,
+  },
+  daySignals: {
+    height: 11,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 4,
+  },
+  typeNeedle: {
+    width: 14,
+    height: 2,
+    borderRadius: 999,
+    opacity: 0.68,
   },
   statusDot: {
-    width: 6,
-    height: 6,
+    width: 5,
+    height: 5,
     borderRadius: 3,
-    marginTop: 5,
+    marginTop: 3,
   },
 });
