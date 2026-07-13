@@ -22,11 +22,11 @@ export function FloatingHeader({ title, subtitle, scrollY, rightSlot }: Floating
 
   return (
     <Animated.View pointerEvents="box-none" style={[styles.shell, { height: insets.top + 64, opacity }]}>
-      <BlurView intensity={42} tint="dark" style={StyleSheet.absoluteFill} />
-      <View style={[styles.tint, StyleSheet.absoluteFill]} />
-      <View style={[styles.bar, { paddingTop: insets.top }]}>
-        <View style={styles.side} />
-        <View style={styles.titleWrap}>
+      <BlurView pointerEvents="none" intensity={42} tint="dark" style={StyleSheet.absoluteFill} />
+      <View pointerEvents="none" style={[styles.tint, StyleSheet.absoluteFill]} />
+      <View pointerEvents="box-none" style={[styles.bar, { paddingTop: insets.top }]}>
+        <View pointerEvents="none" style={styles.side} />
+        <View pointerEvents="none" style={styles.titleWrap}>
           <Text style={styles.title} numberOfLines={1}>
             {title}
           </Text>
@@ -36,7 +36,9 @@ export function FloatingHeader({ title, subtitle, scrollY, rightSlot }: Floating
             </Text>
           ) : null}
         </View>
-        <View style={styles.side}>{rightSlot}</View>
+        <View pointerEvents="box-none" style={styles.side}>
+          {rightSlot}
+        </View>
       </View>
     </Animated.View>
   );
