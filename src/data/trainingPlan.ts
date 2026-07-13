@@ -31,11 +31,7 @@ export const dailyHabits = [
   "如果哪天晚上特别想吃酸奶，一周可以安排 1-2 次，不要天天晚上喝即可。",
 ];
 
-export const weekModifiers: Record<number, string> = {
-  2: "第二周进阶：有氧时长 + 5 分钟，力量每组次数 + 2-3 次。",
-  3: "第三周进阶：力量课后有氧提升至 25 分钟。",
-  4: "第四周进阶：课后有氧 25-30 分钟。",
-};
+export const weeklyCycleModifier = "循环周：按这一周计划重复执行，完成后从周一重新开始。";
 
 const weekOnePlans: DayPlan[] = [
   {
@@ -151,17 +147,13 @@ const weekOnePlans: DayPlan[] = [
 ];
 
 export function clampPlanWeek(week: number) {
-  return Math.min(Math.max(week, 1), 4);
+  return 1;
 }
 
 export function getPlanForWeekday(week: number, weekday: number): DayPlan {
   const safeWeek = clampPlanWeek(week);
   const basePlan = weekOnePlans.find((plan) => plan.weekday === weekday) ?? weekOnePlans[0];
   const notes = [...(basePlan.notes ?? [])];
-
-  if (weekModifiers[safeWeek]) {
-    notes.push(weekModifiers[safeWeek]);
-  }
 
   return {
     ...basePlan,
@@ -178,15 +170,17 @@ export function getGeneratedDemoPlanDocument(profile: GeneratedPlanProfile): Gen
   return {
     schemaVersion: "daily-training-plan/v1",
     source: "demo",
-    durationWeeks: 4,
+    durationWeeks: 1,
     profile,
     globalRules,
     dailyHabits,
-    weeks: [1, 2, 3, 4].map((week) => ({
-      week,
-      theme: week === 1 ? "基础适应周" : `第 ${week} 周进阶`,
-      modifier: weekModifiers[week] ?? "基础适应周",
-      days: getWeekPlans(week),
-    })),
+    weeks: [
+      {
+        week: 1,
+        theme: "循环基础周",
+        modifier: weeklyCycleModifier,
+        days: getWeekPlans(1),
+      },
+    ],
   };
 }

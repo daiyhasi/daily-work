@@ -53,11 +53,9 @@ export function diffInDays(left: Date, right: Date) {
   return Math.floor((startOfDay(left).getTime() - startOfDay(right).getTime()) / msPerDay);
 }
 
-export function getCyclePosition(date: Date, cycleStart: Date) {
-  const dayDiff = diffInDays(date, cycleStart);
-  const rawWeek = Math.floor(dayDiff / 7) + 1;
+export function getCyclePosition(date: Date, _cycleStart: Date) {
   return {
-    week: Math.min(Math.max(rawWeek, 1), 4),
+    week: 1,
     weekday: getWeekdayMondayFirst(date),
   };
 }

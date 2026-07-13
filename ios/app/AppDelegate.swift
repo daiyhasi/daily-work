@@ -87,6 +87,14 @@ public class AppDelegate: ExpoAppDelegate {
 #if DEBUG
     RCTDevLoadingViewSetEnabled(false)
     DailyWorkDebugLog.append(category: "Launch", "dev loading view disabled")
+
+    if ProcessInfo.processInfo.environment["DAILYWORK_USE_METRO"] == "1" {
+      DailyWorkDebugLog.append(category: "Launch", "Metro dev support enabled by DAILYWORK_USE_METRO=1")
+    } else {
+      RCTDevSettingsSetEnabled(false)
+      RCTBundleURLProviderAllowPackagerServerAccess(false)
+      DailyWorkDebugLog.append(category: "Launch", "Metro packager access disabled for embedded debug bundle")
+    }
 #endif
 
     let delegate = ReactNativeDelegate()

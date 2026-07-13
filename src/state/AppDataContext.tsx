@@ -2,10 +2,13 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 
+import { normalizeGeneratedPlanDocument } from "../data/planDocument";
+import { demoPlanProfile } from "../data/planGenerationDemo";
+import { getGeneratedDemoPlanDocument } from "../data/trainingPlan";
 import { getAllCheckIns, getOrCreateCycleStart, saveCheckIn } from "../storage/checkIns";
 import { getGeneratedPlan, saveGeneratedPlan } from "../storage/generatedPlan";
 import { palette } from "../theme";
-import { CheckIn, CheckInMap, GeneratedPlanDocument } from "../types/plan";
+import { CheckIn, CheckInMap, DayPlan, GeneratedPlanDocument } from "../types/plan";
 import { fromDateKey } from "../utils/date";
 
 type AppDataContextValue = {
@@ -15,6 +18,7 @@ type AppDataContextValue = {
   loading: boolean;
   saveCheckIn: (checkIn: CheckIn) => Promise<void>;
   activateGeneratedPlan: (plan: GeneratedPlanDocument) => Promise<void>;
+  updateDayPlan: (weekday: number, plan: DayPlan) => Promise<void>;
 };
 
 const AppDataContext = createContext<AppDataContextValue | null>(null);
@@ -60,8 +64,37 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
   }
 
   async function handleActivateGeneratedPlan(plan: GeneratedPlanDocument) {
-    await saveGeneratedPlan(plan);
-    setGeneratedPlan(plan);
+    const normalizedPlan = await saveGeneratedPlan(plan);
+    setGeneratedPlan(normalizedPlan);
+  }
+
+  async function handleUpdateDayPlan(weekday: number, plan: DayPlan) {
+    const activePlan = normalizeGeneratedPlanDocument(generatedPlan ?? getGeneratedDemoPlanDocument(demoPlanProfile));
+    if (!activePlan) {
+      return;
+    }
+
+    const nextPlan: GeneratedPlanDocument = {
+      ...activePlan,
+      source: activePlan.source,
+      weeks: [
+        {
+          ...activePlan.weeks[0],
+          days: activePlan.weeks[0].days.map((day) =>
+            day.weekday === weekday
+              ? {
+                  ...plan,
+                  week: 1,
+                  weekday,
+                }
+              : day
+          ),
+        },
+      ],
+    };
+
+    const normalizedPlan = await saveGeneratedPlan(nextPlan);
+    setGeneratedPlan(normalizedPlan);
   }
 
   return (
@@ -73,6 +106,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
         loading,
         saveCheckIn: handleSaveCheckIn,
         activateGeneratedPlan: handleActivateGeneratedPlan,
+        updateDayPlan: handleUpdateDayPlan,
       }}
     >
       {children}

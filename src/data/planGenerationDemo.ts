@@ -12,7 +12,7 @@ export const demoPlanProfile: GeneratedPlanProfile = {
 export const defaultPlanPrompt = `174，156斤，肚子大，手臂细，力量小，耐力小，跑步机爬坡20分钟就不行了，想要健身锻炼身体，帮我以周为单位列一份详细的健身饮食计划，目前来说饮食已经改成了每天两顿沙县鸡腿饭。`;
 
 const hiddenPlanGenerationInstructions = [
-  "按周生成计划，默认 4 周，每周 7 天。",
+  "只生成 1 个循环周计划，每周 7 天；后续日期由前端按周重复映射，不要展开第 2-4 周。",
   "每天必须包含训练标题、训练类型、训练概览、训练子项、饮食安排和注意事项。",
   "训练子项 points 必须合计 100，用于每日训练进度条。",
   "训练强度从低起步，适合力量和耐力较弱、爬坡 20 分钟已吃力的阶段。",
@@ -23,7 +23,7 @@ const hiddenPlanGenerationInstructions = [
 const planOutputSchema = `{
   "schemaVersion": "daily-training-plan/v1",
   "source": "ai",
-  "durationWeeks": 4,
+  "durationWeeks": 1,
   "profile": {
     "heightCm": 174,
     "weightJin": 156,
@@ -36,8 +36,8 @@ const planOutputSchema = `{
   "dailyHabits": ["日常小习惯"],
   "weeks": [{
     "week": 1,
-    "theme": "基础适应周",
-    "modifier": "本周强度说明",
+    "theme": "循环基础周",
+    "modifier": "这一周会按自然周循环重复执行",
     "days": [{
       "week": 1,
       "weekday": 1,

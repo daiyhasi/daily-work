@@ -13,7 +13,7 @@ import {
   getWeekPlansFromDocument,
 } from "../data/planDocument";
 import { defaultPlanPrompt } from "../data/planGenerationDemo";
-import { typeColors, typeLabels, weekdayLabels, weekModifiers } from "../data/trainingPlan";
+import { typeColors, typeLabels, weekdayLabels, weeklyCycleModifier } from "../data/trainingPlan";
 import { getPlanPrompt, savePlanPrompt } from "../storage/planPrompt";
 import { palette } from "../theme";
 import { GeneratedPlanDocument } from "../types/plan";
@@ -35,6 +35,7 @@ export function PlanOverviewScreen({ generatedPlan, onActivateGeneratedPlan }: P
   const visibleGlobalRules = getGlobalRulesFromDocument(visiblePlan);
   const visibleDailyHabits = getDailyHabitsFromDocument(visiblePlan);
   const isPreviewing = Boolean(previewPlan);
+  const visibleWeeks = [1];
 
   useEffect(() => {
     let mounted = true;
@@ -189,7 +190,7 @@ export function PlanOverviewScreen({ generatedPlan, onActivateGeneratedPlan }: P
         {previewPlan ? (
           <View style={styles.previewPanel}>
             <Text style={styles.previewTitle}>新计划预览中</Text>
-            <Text style={styles.previewText}>下方四周内容来自刚生成的新计划。替换前，日历和每日详情仍使用当前生效计划。</Text>
+            <Text style={styles.previewText}>下方循环周内容来自刚生成的新计划。替换前，日历和每日详情仍使用当前生效计划。</Text>
             <View style={styles.previewActions}>
               <Button mode="outlined" onPress={() => setPreviewPlan(null)} style={styles.discardButton} labelStyle={styles.secondaryButtonText}>
                 放弃预览
@@ -220,12 +221,12 @@ export function PlanOverviewScreen({ generatedPlan, onActivateGeneratedPlan }: P
         </View>
       </View>
 
-        {[1, 2, 3, 4].map((week) => (
+        {visibleWeeks.map((week) => (
         <View key={week} style={styles.weekSection}>
           <View style={styles.weekHeading}>
             <View>
-              <Text style={styles.weekTitle}>WEEK {week}</Text>
-              <Text style={styles.weekModifier}>{getWeekModifierFromDocument(visiblePlan, week, weekModifiers[week] ?? "基础适应周")}</Text>
+              <Text style={styles.weekTitle}>WEEKLY LOOP</Text>
+              <Text style={styles.weekModifier}>{getWeekModifierFromDocument(visiblePlan, week, weeklyCycleModifier)}</Text>
             </View>
             <Text style={styles.weekCount}>7 DAYS</Text>
           </View>

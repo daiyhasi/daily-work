@@ -7,7 +7,7 @@ import { fromDateKey, getCyclePosition } from "../../src/utils/date";
 
 export default function DayRoute() {
   const { date } = useLocalSearchParams<{ date: string }>();
-  const { cycleStart, checkIns, generatedPlan, loading, saveCheckIn } = useAppData();
+  const { cycleStart, checkIns, generatedPlan, loading, saveCheckIn, updateDayPlan } = useAppData();
 
   if (loading || !cycleStart || !date) {
     return <AppLoadingView />;
@@ -27,6 +27,7 @@ export default function DayRoute() {
       checkIn={checkIns[date]}
       onBack={() => router.back()}
       onSave={saveCheckIn}
+      onUpdatePlan={(nextPlan) => updateDayPlan(position.weekday, nextPlan)}
     />
   );
 }

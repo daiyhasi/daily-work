@@ -1,4 +1,5 @@
 import { buildPlanGenerationRequest, demoPlanProfile } from "../data/planGenerationDemo";
+import { normalizeGeneratedPlanDocument } from "../data/planDocument";
 import { getGeneratedDemoPlanDocument } from "../data/trainingPlan";
 import { GeneratedPlanDocument, PlanGenerationResult } from "../types/plan";
 
@@ -26,7 +27,11 @@ export async function generatePlanFromPrompt(userPrompt: string): Promise<PlanGe
     throw new Error(await getPlanGenerationErrorMessage(response));
   }
 
-  const plan = (await response.json()) as GeneratedPlanDocument;
+  const plan = normalizeGeneratedPlanDocument((await response.json()) as GeneratedPlanDocument);
+  if (!plan) {
+    throw new Error("计划格式不匹配");
+  }
+
   assertGeneratedPlan(plan);
 
   return {
@@ -49,7 +54,7 @@ function assertGeneratedPlan(plan: GeneratedPlanDocument) {
     throw new Error("计划格式不匹配");
   }
 
-  if (!Array.isArray(plan.weeks) || plan.weeks.length === 0) {
-    throw new Error("计划缺少周数据");
+  if (!Array.isArray(plan.weeks) || plan.weeks.length !== 1 || plan.weeks[0]?.days.length !== 7) {
+    throw new Error("计划必须包含 1 个完整循环周");
   }
 }

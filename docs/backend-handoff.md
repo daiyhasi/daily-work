@@ -19,7 +19,7 @@ If `EXPO_PUBLIC_PLAN_API_URL` is not set, the app uses a local mock plan.
 
 ### `POST /plans/generate`
 
-Generate a 4-week training and diet plan from a user prompt.
+Generate a 1-week training and diet plan from a user prompt. The frontend maps future dates by repeating this week as a weekly loop.
 
 Request body:
 
@@ -92,7 +92,7 @@ Minimal example:
 {
   "schemaVersion": "daily-training-plan/v1",
   "source": "ai",
-  "durationWeeks": 4,
+  "durationWeeks": 1,
   "profile": {
     "heightCm": 174,
     "weightJin": 156,
@@ -106,8 +106,8 @@ Minimal example:
   "weeks": [
     {
       "week": 1,
-      "theme": "基础适应周",
-      "modifier": "从低强度开始。",
+      "theme": "循环基础周",
+      "modifier": "从低强度开始，每周循环重复。",
       "days": [
         {
           "week": 1,
@@ -135,9 +135,9 @@ Backend should validate before returning:
 
 - `schemaVersion` must be `daily-training-plan/v1`.
 - `source` must be `ai`.
-- `durationWeeks` should be `4` for v1.
-- `weeks.length` should equal `durationWeeks`.
-- Each week should contain 7 days.
+- `durationWeeks` should be `1` for v1.
+- `weeks.length` should be `1`; do not expand week 2-4.
+- The single week should contain 7 days.
 - `weekday` must be `1` to `7`, Monday first.
 - `type` must be one of `cardio`, `strength`, `recovery`, `rest`.
 - Every `trainingTasks` array must be non-empty.

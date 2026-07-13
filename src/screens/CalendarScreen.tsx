@@ -78,7 +78,7 @@ export function CalendarScreen({ month, cycleStart, checkIns, generatedPlan, onM
         <View style={styles.todayMainRow}>
           <View style={styles.todayCopy}>
             <Text style={styles.todayTitle}>{todayPlan.title}</Text>
-            <Text style={styles.todayType}>第 {todayPlan.week} 周 / {typeLabels[todayPlan.type]}</Text>
+            <Text style={styles.todayType}>循环周 / {typeLabels[todayPlan.type]}</Text>
           </View>
           <View style={styles.scoreBlock}>
             <Text style={styles.scoreNumber}>{todayOverall}</Text>
