@@ -1,10 +1,11 @@
 import { ArrowLeft, Droplets, Dumbbell, Pencil, Plus, Trash2, Utensils, X } from "lucide-react-native";
 import { useState } from "react";
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { Button, TextInput } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { CheckRow } from "../components/CheckRow";
+import { ElasticScrollView } from "../components/ElasticScrollView";
 import { typeColors, typeLabels, weekdayLabels } from "../data/trainingPlan";
 import { createEmptyCheckIn } from "../storage/checkIns";
 import { palette } from "../theme";
@@ -153,7 +154,7 @@ export function DayPlanScreen({ date, dateKey, plan, globalRules, dailyHabits, c
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ElasticScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={[styles.hero, { borderColor: `${planColor}66` }]}>
           <View style={styles.heroTop}>
             <Text style={[styles.typeLabel, { color: planColor }]}>循环周 / {typeLabels[plan.type]}</Text>
@@ -253,7 +254,7 @@ export function DayPlanScreen({ date, dateKey, plan, globalRules, dailyHabits, c
             </Text>
           ))}
         </Section>
-      </ScrollView>
+      </ElasticScrollView>
 
       <Modal visible={Boolean(taskEditor)} transparent animationType="fade" onRequestClose={closeTaskEditor}>
         <View style={styles.modalBackdrop}>

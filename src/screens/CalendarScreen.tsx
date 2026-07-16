@@ -3,6 +3,7 @@ import { useRef } from "react";
 import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { ElasticScrollView } from "../components/ElasticScrollView";
 import { FloatingHeader } from "../components/FloatingHeader";
 import { getPlanForWeekdayFromDocument } from "../data/planDocument";
 import { typeColors, typeLabels, weekdayLabels } from "../data/trainingPlan";
@@ -42,7 +43,7 @@ export function CalendarScreen({ month, cycleStart, checkIns, generatedPlan, onM
   return (
     <View style={styles.screen}>
       <FloatingHeader title="DAILY WORK" subtitle={formatChineseMonth(month)} scrollY={scrollY} />
-      <Animated.ScrollView
+      <ElasticScrollView
         style={styles.screen}
         contentContainerStyle={[styles.content, { paddingTop: Math.max(insets.top + 10, 28) }]}
         scrollEventThrottle={16}
@@ -185,7 +186,7 @@ export function CalendarScreen({ month, cycleStart, checkIns, generatedPlan, onM
           })}
         </View>
         </View>
-      </Animated.ScrollView>
+      </ElasticScrollView>
     </View>
   );
 }

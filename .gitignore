@@ -36,9 +36,6 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
-# Generated native folders
-/android
-
 # iOS native project is tracked because this app customizes native launch behavior.
 /ios/Pods/
 /ios/build/

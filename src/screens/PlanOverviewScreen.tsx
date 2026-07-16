@@ -5,6 +5,7 @@ import { Button, TextInput } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { generatePlanFromPrompt } from "../api/planGeneration";
+import { ElasticScrollView } from "../components/ElasticScrollView";
 import { FloatingHeader } from "../components/FloatingHeader";
 import {
   getDailyHabitsFromDocument,
@@ -110,7 +111,7 @@ export function PlanOverviewScreen({ generatedPlan, onActivateGeneratedPlan }: P
           </View>
         }
       />
-      <Animated.ScrollView
+      <ElasticScrollView
         style={styles.screen}
         contentContainerStyle={[styles.content, { paddingTop: Math.max(insets.top + 10, 28) }]}
         scrollEventThrottle={16}
@@ -260,7 +261,7 @@ export function PlanOverviewScreen({ generatedPlan, onActivateGeneratedPlan }: P
             </Text>
           ))}
         </View>
-      </Animated.ScrollView>
+      </ElasticScrollView>
     </View>
   );
 }
