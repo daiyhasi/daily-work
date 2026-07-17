@@ -36,12 +36,12 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
-# iOS native project is tracked because this app customizes native launch behavior.
-/ios/Pods/
-/ios/build/
-/ios/DerivedData/
-/ios/.xcode.env.local
-/ios/**/*.xcuserdata/
-/ios/**/*.xcuserstate
-/ios/**/*.ipa
-/ios/**/*.jsbundle
+# Native projects live in platform/. Root ios/ and android/ symlinks remain for Expo compatibility.
+/platform/ios/Pods/
+/platform/ios/build/
+/platform/ios/DerivedData/
+/platform/ios/.xcode.env.local
+/platform/ios/**/*.xcuserdata/
+/platform/ios/**/*.xcuserstate
+/platform/ios/**/*.ipa
+/platform/ios/**/*.jsbundle

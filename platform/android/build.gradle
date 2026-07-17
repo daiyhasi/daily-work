@@ -22,3 +22,15 @@ allprojects {
 
 apply plugin: "expo-root-project"
 apply plugin: "com.facebook.react.rootproject"
+
+def appProjectRoot = rootDir.parentFile.parentFile
+def nativeProjectRootPath = rootDir.absolutePath
+
+gradle.projectsEvaluated {
+  project(':expo-constants').tasks.named('createExpoConfig').configure {
+    workingDir appProjectRoot
+    setCommandLine(commandLine.collect { argument ->
+      argument.toString() == nativeProjectRootPath ? appProjectRoot.absolutePath : argument
+    })
+  }
+}
